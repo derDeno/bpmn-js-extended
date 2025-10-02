@@ -3,8 +3,7 @@ FROM node:20-alpine AS build
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
-RUN corepack enable \
-    && corepack prepare npm@latest --activate \
+RUN npm install -g npm@latest \
     && npm ci
 
 COPY . .
@@ -15,8 +14,7 @@ FROM node:20-alpine AS base
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
-RUN corepack enable \
-    && corepack prepare npm@latest --activate \
+RUN npm install -g npm@latest \
     && npm ci --omit=dev
 
 COPY --from=build /usr/src/app/dist ./dist
