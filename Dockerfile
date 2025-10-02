@@ -1,3 +1,13 @@
+FROM node:20-alpine AS build
+
+WORKDIR /usr/src/app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run distro
+
 FROM node:20-alpine AS base
 
 WORKDIR /usr/src/app
@@ -5,10 +15,10 @@ WORKDIR /usr/src/app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY dist ./dist
-COPY assets ./assets
-COPY resources ./resources
-COPY app ./app
+COPY --from=build /usr/src/app/dist ./dist
+COPY --from=build /usr/src/app/assets ./assets
+COPY --from=build /usr/src/app/resources ./resources
+COPY --from=build /usr/src/app/app ./app
 
 ENV NODE_ENV=production \
     PORT=3000 \
