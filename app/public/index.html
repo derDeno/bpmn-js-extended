@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>bpmn-js Extended Modeler</title>
+    <link rel="stylesheet" href="/assets/bpmn-js.css" />
+    <link rel="stylesheet" href="/main.css" />
+  </head>
+  <body>
+    <header>
+      <h1>bpmn-js Extended Modeler</h1>
+      <div class="actions">
+        <button id="new-diagram">New diagram</button>
+        <button id="save-diagram" disabled>Save diagram</button>
+        <button id="toggle-sidebar" type="button" aria-pressed="false">Hide sidebar</button>
+        <button id="share-diagram" disabled>Share</button>
+      </div>
+    </header>
+
+    <main>
+      <aside>
+        <h2>Saved diagrams</h2>
+        <ul id="diagram-list"></ul>
+      </aside>
+
+      <section id="workspace">
+        <div id="canvas"></div>
+        <div id="status" role="status" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script src="/static/bpmn-modeler.development.js"></script>
+    <script src="/main.js" type="module"></script>
+  </body>
+</html>
