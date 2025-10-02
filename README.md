@@ -65,6 +65,19 @@ Prepare the project by installing all dependencies:
 npm install
 ```
 
+### Dockerized modeler
+
+This repository ships with a lightweight web application that wraps the default `bpmn-js` modeler with persistence and sharing capabilities. You can run it locally via Docker:
+
+```sh
+docker build -t bpmn-js-extended .
+docker run --rm -it -p 3000:3000 -v "$(pwd)/diagrams:/data" bpmn-js-extended
+```
+
+The container exposes port `3000` and stores BPMN diagrams inside `/data`, which can be mounted to a host directory or Docker volume. When the server starts it populates the storage directory with a sample diagram if it is empty.
+
+Within the UI you can create, load, and save diagrams. Organize them inside folders by including `/` in the diagram name (e.g. `team-a/example-process`)—the sidebar shows a collapsible tree for easy navigation. Use the **Share** button to copy an embeddable URL (e.g. `http://localhost:3000/embed/team-a/example-process`) that renders the diagram in a minimal viewer without the editor chrome—perfect for embedding in dashboards or documentation.
+
 Then, depending on your use-case you may run any of the following commands:
 
 ```sh

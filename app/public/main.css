@@ -1,0 +1,171 @@
+:root {
+  color-scheme: light dark;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f7f7f7;
+  color: #1a1a1a;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background: #354052;
+  color: #fff;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+header .actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+header button {
+  background: #00b3ff;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+header button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+header button:not([disabled]):hover {
+  background: #008fd1;
+}
+
+main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  min-height: 0;
+}
+
+aside {
+  background: #fff;
+  border-right: 1px solid #dde1e6;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+aside h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+#diagram-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#diagram-list > li {
+  margin-bottom: 0.4rem;
+}
+
+#diagram-list ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 1rem;
+}
+
+#diagram-list details {
+  padding: 0.15rem 0;
+}
+
+#diagram-list details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+}
+
+#diagram-list details > summary:hover {
+  background: #f0f3f8;
+}
+
+#diagram-list button {
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid transparent;
+  background: #f0f3f8;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease, border 0.2s ease;
+}
+
+#diagram-list button:hover,
+#diagram-list button.active {
+  background: #e2ecff;
+  border-color: #7aa5ff;
+}
+
+#diagram-list .empty-folder {
+  color: #707780;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.4rem;
+}
+
+#workspace {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#canvas {
+  flex: 1;
+  background: #fff;
+}
+
+#status {
+  padding: 0.5rem 1rem;
+  min-height: 1.4rem;
+  color: #354052;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+
+  aside {
+    border-right: none;
+    border-bottom: 1px solid #dde1e6;
+  }
+}
+
+#status[data-variant='error'] {
+  color: #c0392b;
+}
+
+#status[data-variant='info'] {
+  color: #354052;
+}
+
+body.sidebar-hidden main {
+  grid-template-columns: 1fr;
+}
+
+body.sidebar-hidden aside {
+  display: none;
+}
