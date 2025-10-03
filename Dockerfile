@@ -1,4 +1,4 @@
-FROM node:20-alpine AS build
+FROM node:20-bookworm-slim AS build
 
 WORKDIR /usr/src/app
 
@@ -10,7 +10,7 @@ RUN corepack enable \
 COPY . .
 RUN npm run distro
 
-FROM node:20-alpine AS base
+FROM node:20-bookworm-slim AS base
 
 WORKDIR /usr/src/app
 
