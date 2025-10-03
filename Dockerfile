@@ -1,33 +1,21 @@
 FROM node:20-bookworm-slim AS build
 
-ENV COREPACK_HOME=/usr/local/share/corepack \
-    PATH=${COREPACK_HOME}/shims:${PATH}
-
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
-RUN set -eux; \
-    mkdir -p "$COREPACK_HOME/shims"; \
-    corepack enable --install-directory "$COREPACK_HOME/shims"; \
-    corepack prepare npm@latest --activate; \
-    npm ci
+RUN npm install -g npm@latest \
+    && npm ci
 
 COPY . .
 RUN npm run distro
 
 FROM node:20-bookworm-slim AS base
 
-ENV COREPACK_HOME=/usr/local/share/corepack \
-    PATH=${COREPACK_HOME}/shims:${PATH}
-
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
-RUN set -eux; \
-    mkdir -p "$COREPACK_HOME/shims"; \
-    corepack enable --install-directory "$COREPACK_HOME/shims"; \
-    corepack prepare npm@latest --activate; \
-    npm ci --omit=dev
+RUN npm install -g npm@latest \
+    && npm ci --omit=dev
 
 COPY --from=build /usr/src/app/dist ./dist
 COPY --from=build /usr/src/app/assets ./assets
