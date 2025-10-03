@@ -3,7 +3,8 @@ FROM node:20-bookworm-slim AS build
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
-RUN corepack enable \
+RUN npm install -g corepack \
+    && corepack enable \
     && corepack prepare npm@latest --activate \
     && npm ci
 
@@ -15,7 +16,8 @@ FROM node:20-bookworm-slim AS base
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
-RUN corepack enable \
+RUN npm install -g corepack \
+    && corepack enable \
     && corepack prepare npm@latest --activate \
     && npm ci --omit=dev
 
