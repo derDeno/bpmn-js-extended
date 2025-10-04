@@ -13,7 +13,7 @@ FROM node:20-bookworm-slim AS base
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts
+RUN npm ci --omit=dev
 
 COPY --from=build /usr/src/app/dist ./dist
 COPY --from=build /usr/src/app/assets ./assets
