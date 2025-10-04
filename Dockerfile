@@ -3,7 +3,7 @@ FROM node:20-bookworm-slim AS build
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY . .
 RUN npm run distro \
