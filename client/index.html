@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BPMN Modeler</title>
+    <link rel="stylesheet" href="./styles/global.css" />
+    <link rel="stylesheet" href="./src/modeler/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="app-title">
+          <img src="https://cdn.bpmn.io/assets/bpmn-io-logo.svg" alt="bpmn.io logo" width="36" height="36" />
+          <span>BPMN Modeler</span>
+        </div>
+        <div class="action-bar">
+          <div class="action-group">
+            <button class="button primary" id="new-diagram">New Diagram</button>
+            <button class="button" id="import-file">Import File</button>
+            <button class="button" id="download-diagram">Download BPMN</button>
+          </div>
+          <div class="action-group">
+            <button class="button file-browser-toggle" id="toggle-storage">
+              <span>Storage</span>
+            </button>
+          </div>
+        </div>
+      </header>
+      <div class="app-body">
+        <div class="canvas-wrapper">
+          <div id="canvas"></div>
+        </div>
+        <div id="properties" class="properties-panel-parent"></div>
+      </div>
+      <div id="file-browser" class="file-browser hidden" aria-hidden="true">
+        <div class="file-browser-card">
+          <div class="file-browser-header">
+            <h2>Workspace Storage</h2>
+            <button class="button" id="close-storage">Close</button>
+          </div>
+          <div class="file-browser-body">
+            <div class="tree-view" aria-live="polite">
+              <ul id="storage-tree"></ul>
+            </div>
+            <div class="file-browser-actions">
+              <div class="panel-card">
+                <h3>Save Diagram</h3>
+                <p class="storage-hint">Enter a path relative to the workspace root. Create folders as needed.</p>
+                <form id="save-form">
+                  <div class="input-group">
+                    <label for="save-path">File path</label>
+                    <input type="text" id="save-path" placeholder="diagrams/example.bpmn" />
+                  </div>
+                  <button type="submit" class="small-button primary">Save</button>
+                </form>
+              </div>
+              <div class="panel-card">
+                <h3>Create Folder</h3>
+                <form id="folder-form">
+                  <div class="input-group">
+                    <label for="folder-path">Folder path</label>
+                    <input type="text" id="folder-path" placeholder="diagrams/new-folder" />
+                  </div>
+                  <button type="submit" class="small-button">Create</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept=".bpmn,.xml" hidden />
+    <script type="module" src="/src/modeler/main.js"></script>
+  </body>
+</html>

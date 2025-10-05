@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BPMN Viewer</title>
+    <link rel="stylesheet" href="./styles/global.css" />
+    <link rel="stylesheet" href="./src/viewer/style.css" />
+  </head>
+  <body class="viewer-app">
+    <header class="viewer-header">
+      <h1>BPMN Viewer</h1>
+      <span id="viewer-label"></span>
+    </header>
+    <div class="viewer-canvas">
+      <div id="viewer"></div>
+      <div id="viewer-empty" class="viewer-empty" hidden>
+        Provide a <code>?path=&lt;file.bpmn&gt;</code> query parameter to load a diagram.
+      </div>
+    </div>
+    <script type="module" src="/src/viewer/main.js"></script>
+  </body>
+</html>
