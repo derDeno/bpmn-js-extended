@@ -45,6 +45,7 @@ const modeler = new BpmnModeler({
 const newDiagramButton = document.getElementById('new-diagram');
 const importButton = document.getElementById('import-file');
 const downloadButton = document.getElementById('download-diagram');
+const shareButton = document.getElementById('share-diagram');
 const storageToggle = document.getElementById('toggle-storage');
 const fileBrowser = document.getElementById('file-browser');
 const closeStorage = document.getElementById('close-storage');
@@ -54,6 +55,68 @@ const savePathInput = document.getElementById('save-path');
 const folderForm = document.getElementById('folder-form');
 const folderPathInput = document.getElementById('folder-path');
 const fileInput = document.getElementById('file-input');
+const themeToggle = document.getElementById('theme-toggle');
+
+const THEME_STORAGE_KEY = 'bpmn-theme-preference';
+const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+function readStoredTheme() {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Unable to read theme preference from storage.', error);
+    return null;
+  }
+}
+
+function writeStoredTheme(theme) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (error) {
+    console.warn('Unable to persist theme preference.', error);
+  }
+}
+
+function clearStoredTheme() {
+  try {
+    localStorage.removeItem(THEME_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Unable to clear theme preference.', error);
+  }
+}
+
+function updateThemeToggle(theme) {
+  if (!themeToggle) {
+    return;
+  }
+
+  const isDark = theme === 'dark';
+  themeToggle.setAttribute('aria-pressed', String(isDark));
+  const actionLabel = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+  const followSystemHint = 'Shift + click to follow system theme';
+  themeToggle.setAttribute('aria-label', isDark ? 'Activate light mode' : 'Activate dark mode');
+  themeToggle.setAttribute('title', `${actionLabel}\n${followSystemHint}`);
+}
+
+function applyTheme(theme) {
+  const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = normalizedTheme;
+  updateThemeToggle(normalizedTheme);
+}
+
+function initializeTheme() {
+  const storedTheme = readStoredTheme();
+  const initialTheme = storedTheme ?? (prefersDarkScheme.matches ? 'dark' : 'light');
+  applyTheme(initialTheme);
+
+  prefersDarkScheme.addEventListener('change', (event) => {
+    if (!readStoredTheme()) {
+      applyTheme(event.matches ? 'dark' : 'light');
+    }
+  });
+}
+
+initializeTheme();
 
 let currentActiveNode;
 
@@ -274,8 +337,92 @@ downloadButton?.addEventListener('click', async () => {
   }
 });
 
+async function shareCurrentDiagram() {
+  if (!shareButton) {
+    return;
+  }
+
+  const previousDisabledState = shareButton.disabled;
+  shareButton.disabled = true;
+
+  try {
+    const { xml } = await modeler.saveXML({ format: true });
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, '-');
+    const sharePath = `shared/diagram-${timestamp}.bpmn`;
+
+    const response = await fetch('/api/storage/file', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ path: sharePath, contents: xml })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to store shared diagram');
+    }
+
+    const shareUrl = new URL('/viewer', window.location.origin);
+    shareUrl.searchParams.set('path', sharePath);
+
+    const urlString = shareUrl.toString();
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'BPMN Diagram', url: urlString });
+        return;
+      } catch (error) {
+        // fall back to clipboard when user cancels share or share is unsupported
+        if (error.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(urlString);
+        alert(`Share link copied to clipboard.\n${urlString}`);
+        return;
+      } catch (error) {
+        console.warn('Clipboard write failed, falling back to manual copy.', error);
+      }
+    }
+
+    const manualCopy = window.prompt('Copy the share link for this diagram:', urlString);
+
+    if (manualCopy === null) {
+      alert(`Share link ready:\n${urlString}`);
+    }
+  } catch (error) {
+    console.error(error);
+    alert('Unable to share the current diagram.');
+  } finally {
+    shareButton.disabled = previousDisabledState;
+  }
+}
+
+shareButton?.addEventListener('click', () => {
+  void shareCurrentDiagram();
+});
+
 storageToggle?.addEventListener('click', () => toggleStorageOverlay());
 closeStorage?.addEventListener('click', () => toggleStorageOverlay(false));
+
+themeToggle?.addEventListener('click', (event) => {
+  if (event.shiftKey) {
+    clearStoredTheme();
+    applyTheme(prefersDarkScheme.matches ? 'dark' : 'light');
+    return;
+  }
+
+  const currentTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+  const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(nextTheme);
+  writeStoredTheme(nextTheme);
+});
 
 saveForm?.addEventListener('submit', async (event) => {
   event.preventDefault();

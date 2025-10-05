@@ -10,11 +10,12 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  background: #ffffffea;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface-border);
   backdrop-filter: blur(12px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--surface-shadow);
   z-index: 2;
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
 .app-title {
@@ -49,15 +50,15 @@
   font-size: 0.95rem;
   font-weight: 500;
   border: 1px solid transparent;
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--button-bg);
+  color: var(--button-text);
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.35s ease, color 0.35s ease;
 }
 
 .button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+  box-shadow: var(--button-hover-shadow);
 }
 
 .button:active {
@@ -66,12 +67,12 @@
 }
 
 .button.primary {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--button-primary-start), var(--button-primary-end));
   color: #fff;
 }
 
 .button.primary:hover {
-  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--button-primary-shadow);
 }
 
 .app-body {
@@ -84,7 +85,8 @@
 .canvas-wrapper {
   flex: 1;
   position: relative;
-  background: #fff;
+  background: var(--canvas-bg);
+  transition: background 0.35s ease;
 }
 
 #canvas {
@@ -94,13 +96,17 @@
 
 .properties-panel-parent {
   width: 340px;
-  background: #f8fafc;
-  border-left: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--panel-bg);
+  border-left: 1px solid var(--panel-border);
   overflow-y: auto;
+  color: inherit;
+  transition: background 0.35s ease, border-color 0.35s ease;
 }
 
 .properties-panel-parent .djs-properties-panel {
   height: 100%;
+  background: transparent;
+  color: inherit;
 }
 
 .file-browser-toggle {
@@ -112,12 +118,13 @@
 .file-browser {
   position: absolute;
   inset: 0;
-  background: rgba(9, 12, 18, 0.45);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
   z-index: 10;
+  transition: background 0.35s ease;
 }
 
 .file-browser.hidden {
@@ -127,12 +134,13 @@
 .file-browser-card {
   width: min(900px, 90vw);
   max-height: 80vh;
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 24px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 32px 64px rgba(15, 23, 42, 0.25);
+  box-shadow: var(--dialog-shadow);
   overflow: hidden;
+  transition: background 0.35s ease, box-shadow 0.35s ease;
 }
 
 .file-browser-header {
@@ -140,7 +148,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 2rem 1rem;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  border-bottom: 1px solid var(--panel-border);
+  transition: border-color 0.35s ease;
 }
 
 .file-browser-header h2 {
@@ -160,10 +169,11 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--tree-border);
   border-radius: 16px;
   padding: 1rem;
-  background: #f8fafc;
+  background: var(--tree-bg);
+  transition: background 0.35s ease, border-color 0.35s ease;
 }
 
 .tree-view ul {
@@ -185,7 +195,7 @@
 
 .tree-item:hover,
 .tree-item.active {
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--tree-hover);
 }
 
 .tree-item .label {
@@ -207,12 +217,13 @@
 
 .panel-card {
   padding: 1rem;
-  background: #f8fafc;
+  background: var(--panel-bg);
   border-radius: 16px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--panel-border);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  transition: background 0.35s ease, border-color 0.35s ease;
 }
 
 .panel-card h3 {
@@ -229,35 +240,42 @@
 .input-group label {
   font-size: 0.85rem;
   font-weight: 500;
-  color: rgba(15, 23, 42, 0.75);
+  color: var(--input-label);
+  transition: color 0.35s ease;
 }
 
 .input-group input {
   padding: 0.6rem 0.75rem;
   border-radius: 10px;
-  border: 1px solid rgba(15, 23, 42, 0.15);
+  border: 1px solid var(--input-border);
   font-size: 0.95rem;
   font-family: inherit;
+  background: transparent;
+  color: inherit;
+  transition: border-color 0.35s ease, background 0.35s ease, color 0.35s ease;
 }
 
 .small-button {
   padding: 0.45rem 0.75rem;
   border-radius: 10px;
   border: none;
-  background: #e2e8f0;
+  background: var(--small-button-bg);
   font-weight: 500;
   cursor: pointer;
+  color: var(--small-button-text);
+  transition: background 0.35s ease, color 0.35s ease;
 }
 
 .small-button.primary {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--button-primary-start), var(--button-primary-end));
   color: #fff;
 }
 
 .storage-hint {
   font-size: 0.85rem;
-  color: rgba(15, 23, 42, 0.6);
+  color: var(--storage-hint);
   line-height: 1.4;
+  transition: color 0.35s ease;
 }
 
 @media (max-width: 1024px) {

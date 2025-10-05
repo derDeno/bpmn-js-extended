@@ -6,8 +6,6 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 
 const container = document.getElementById('viewer');
 const emptyState = document.getElementById('viewer-empty');
-const label = document.getElementById('viewer-label');
-
 const viewer = new BpmnViewer({
   container
 });
@@ -23,12 +21,13 @@ async function loadDiagram(path) {
     const { contents } = await response.json();
     await viewer.importXML(contents);
     viewer.get('canvas').zoom('fit-viewport');
-    label.textContent = path;
+    document.title = `BPMN Viewer – ${path}`;
     emptyState.hidden = true;
   } catch (error) {
     console.error(error);
     emptyState.hidden = false;
     emptyState.textContent = 'Unable to load diagram. Check the path and try again.';
+    document.title = 'BPMN Viewer';
   }
 }
 
@@ -38,6 +37,7 @@ function init() {
 
   if (!path) {
     emptyState.hidden = false;
+    document.title = 'BPMN Viewer';
     return;
   }
 
