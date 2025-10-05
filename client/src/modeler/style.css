@@ -5,6 +5,10 @@
   flex-direction: column;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .app-header {
   display: flex;
   align-items: center;
@@ -266,9 +270,18 @@
   transition: background 0.35s ease, color 0.35s ease;
 }
 
+.small-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .small-button.primary {
   background: linear-gradient(135deg, var(--button-primary-start), var(--button-primary-end));
   color: #fff;
+}
+
+.share-option input:disabled + .share-option-content {
+  opacity: 0.6;
 }
 
 .storage-hint {
@@ -276,6 +289,146 @@
   color: var(--storage-hint);
   line-height: 1.4;
   transition: color 0.35s ease;
+}
+
+dialog {
+  border: none;
+  border-radius: 24px;
+  padding: 0;
+  max-width: min(480px, 90vw);
+  width: 100%;
+  background: var(--card-bg);
+  color: inherit;
+  box-shadow: var(--dialog-shadow);
+}
+
+dialog::backdrop {
+  background: var(--overlay);
+  backdrop-filter: blur(2px);
+}
+
+.share-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.75rem;
+}
+
+.share-dialog.is-processing {
+  opacity: 0.8;
+}
+
+.share-dialog-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.share-dialog-description {
+  margin: 0.25rem 0 0;
+  color: var(--storage-hint);
+  font-size: 0.95rem;
+}
+
+.share-options {
+  margin: 0;
+  border-radius: 18px;
+  border: 1px solid var(--panel-border);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.35s ease;
+}
+
+.share-options legend {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0 0.5rem;
+}
+
+.share-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+
+.share-option:hover {
+  background: var(--tree-hover);
+}
+
+.share-option.disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.share-option.disabled:hover {
+  background: transparent;
+}
+
+.share-option input {
+  margin-top: 0.25rem;
+  accent-color: var(--button-primary-start);
+}
+
+.share-option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.share-option-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.share-option-hint {
+  font-size: 0.9rem;
+  color: var(--storage-hint);
+}
+
+.share-link-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.share-link-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--input-label);
+}
+
+.share-link-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.share-link-row input {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: transparent;
+  color: inherit;
+}
+
+.share-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.share-error {
+  min-height: 1.25rem;
+  color: var(--color-danger);
+  font-size: 0.9rem;
 }
 
 @media (max-width: 1024px) {
