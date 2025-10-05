@@ -1,0 +1,24 @@
+{
+  "name": "bpmn-js-extended",
+  "version": "1.0.0",
+  "description": "BPMN modeler and viewer web application with storage support",
+  "type": "module",
+  "scripts": {
+    "dev": "node server/index.js",
+    "build": "npm run build:client",
+    "build:client": "vite build",
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "@bpmn-io/properties-panel": "^3.16.1",
+    "bpmn-js": "^17.11.0",
+    "bpmn-js-properties-panel": "^5.42.1",
+    "camunda-bpmn-js-behaviors": "^1.11.2",
+    "camunda-bpmn-moddle": "7.0.1",
+    "express": "^4.19.2",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.8"
+  }
+}
