@@ -433,22 +433,51 @@ async function shareCurrentDiagram() {
   shareButton.disabled = true;
 
   try {
-    const { xml } = await modeler.saveXML({ format: true });
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[:.]/g, '-');
-    const sharePath = `shared/diagram-${timestamp}.bpmn`;
+    const shouldCreateSnapshot = window.confirm(
+      'Create a new snapshot copy for sharing?\nSelect "Cancel" to share the original file instead.'
+    );
 
-    const response = await fetch('/api/storage/file', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ path: sharePath, contents: xml })
-    });
+    let sharePath;
 
-    if (!response.ok) {
-      throw new Error('Failed to store shared diagram');
+    if (shouldCreateSnapshot) {
+      const { xml } = await modeler.saveXML({ format: true });
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[:.]/g, '-');
+      sharePath = `shared/diagram-${timestamp}.bpmn`;
+
+      const response = await fetch('/api/storage/file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ path: sharePath, contents: xml })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to store shared diagram');
+      }
+    } else {
+      const sourcePath = savePathInput.value.trim();
+
+      if (!sourcePath) {
+        alert('Provide a file path to share the source diagram.');
+        return;
+      }
+
+      const normalizedPath = sourcePath.endsWith('.bpmn')
+        ? sourcePath
+        : `${sourcePath}.bpmn`;
+
+      const confirmDirectShare = window.confirm(
+        `The share link will point to "${normalizedPath}".\nEnsure your latest changes are saved before continuing.`
+      );
+
+      if (!confirmDirectShare) {
+        return;
+      }
+
+      sharePath = normalizedPath;
     }
 
     const shareUrl = new URL('/viewer', window.location.origin);
