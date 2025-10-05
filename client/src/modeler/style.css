@@ -45,6 +45,31 @@
   gap: 0.5rem;
 }
 
+.language-group {
+  align-items: center;
+}
+
+.language-select {
+  padding: 0.45rem 1.5rem 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: var(--button-bg);
+  color: var(--button-text);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.15s ease;
+}
+
+.language-select:hover {
+  box-shadow: var(--button-hover-shadow);
+}
+
+.language-select:focus-visible {
+  outline: none;
+  box-shadow: var(--button-primary-shadow);
+}
+
 .button {
   display: inline-flex;
   align-items: center;

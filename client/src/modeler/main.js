@@ -11,6 +11,15 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
+import {
+  applyTranslations,
+  getAvailableLocales,
+  getCurrentLocale,
+  initializeLocale,
+  onLocaleChange,
+  setLocale,
+  t
+} from '../i18n/index.js';
 
 const DEFAULT_DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
@@ -66,6 +75,7 @@ const copyShareLinkButton = document.getElementById('copy-share-link');
 const shareErrorElement = document.getElementById('share-error');
 const shareCancelButton = document.getElementById('share-cancel');
 const shareGenerateButton = document.getElementById('share-generate');
+const languageSelect = document.getElementById('language-select');
 
 const THEME_STORAGE_KEY = 'bpmn-theme-preference';
 const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -102,9 +112,9 @@ function updateThemeToggle(theme) {
 
   const isDark = theme === 'dark';
   themeToggle.setAttribute('aria-pressed', String(isDark));
-  const actionLabel = isDark ? 'Switch to light mode' : 'Switch to dark mode';
-  const followSystemHint = 'Shift + click to follow system theme';
-  themeToggle.setAttribute('aria-label', isDark ? 'Activate light mode' : 'Activate dark mode');
+  const actionLabel = isDark ? t('theme.switchToLight') : t('theme.switchToDark');
+  const followSystemHint = t('theme.followSystemHint');
+  themeToggle.setAttribute('aria-label', isDark ? t('theme.activateLight') : t('theme.activateDark'));
   themeToggle.setAttribute('title', `${actionLabel}\n${followSystemHint}`);
 }
 
@@ -126,14 +136,13 @@ function initializeTheme() {
   });
 }
 
+initializeLocale();
 initializeTheme();
 
 let currentActiveNode;
-let currentDiagramName = 'Unsaved diagram';
+let currentDiagramName = '';
 let currentStoragePath = null;
 let shareOperationInFlight = false;
-
-const COPY_BUTTON_DEFAULT_TEXT = 'Copy link';
 
 function normalizeStoragePath(path) {
   return path?.replace(/\\+/g, '/') ?? '';
@@ -141,23 +150,25 @@ function normalizeStoragePath(path) {
 
 function deriveNameFromPath(path) {
   if (!path) {
-    return 'Unsaved diagram';
+    return '';
   }
 
   const normalizedPath = normalizeStoragePath(path);
   const segments = normalizedPath.split('/');
   const candidate = segments.filter(Boolean).pop() ?? normalizedPath;
 
-  return candidate || 'Unsaved diagram';
+  return candidate || '';
 }
 
-function setDiagramSource(path, fallbackName) {
+function setDiagramSource(path, fallbackName = '') {
   currentStoragePath = path ? normalizeStoragePath(path) : null;
 
   if (currentStoragePath) {
     currentDiagramName = deriveNameFromPath(currentStoragePath);
   } else if (typeof fallbackName === 'string') {
     currentDiagramName = fallbackName;
+  } else {
+    currentDiagramName = '';
   }
 
   updateShareModeAvailability();
@@ -165,7 +176,11 @@ function setDiagramSource(path, fallbackName) {
 }
 
 function getDiagramDisplayName() {
-  return currentDiagramName?.trim() ? currentDiagramName.trim() : 'Unsaved diagram';
+  if (currentDiagramName?.trim()) {
+    return currentDiagramName.trim();
+  }
+
+  return t('diagram.unsaved');
 }
 
 function updateDiagramTitle() {
@@ -176,7 +191,7 @@ function updateDiagramTitle() {
   const diagramTitle = getDiagramDisplayName();
   diagramNameElement.textContent = diagramTitle;
   diagramNameElement.title = currentStoragePath ?? diagramTitle;
-  document.title = `${diagramTitle} - BPMN Modeler`;
+  document.title = `${diagramTitle} - ${t('app.modelerTitle')}`;
 }
 
 function updateShareModeAvailability() {
@@ -240,10 +255,12 @@ function clearShareFeedback() {
 
   if (copyShareLinkButton) {
     copyShareLinkButton.disabled = true;
-    copyShareLinkButton.textContent = COPY_BUTTON_DEFAULT_TEXT;
+    copyShareLinkButton.dataset.state = 'default';
+    updateCopyShareLinkLabel();
   }
 
   if (shareErrorElement) {
+    delete shareErrorElement.dataset.i18n;
     shareErrorElement.textContent = '';
   }
 }
@@ -313,7 +330,8 @@ async function handleShareSubmit(event) {
 
     if (mode === 'source') {
       if (!currentStoragePath) {
-        shareErrorElement.textContent = 'Save the diagram before sharing the source file.';
+        shareErrorElement.dataset.i18n = 'share.error.noSource';
+        shareErrorElement.textContent = t('share.error.noSource');
         return;
       }
 
@@ -331,13 +349,16 @@ async function handleShareSubmit(event) {
 
       if (copyShareLinkButton) {
         copyShareLinkButton.disabled = false;
+        copyShareLinkButton.dataset.state = 'default';
+        updateCopyShareLinkLabel();
       }
 
       focusShareLink();
     }
   } catch (error) {
     console.error(error);
-    shareErrorElement.textContent = 'Unable to generate a share link. Please try again.';
+    shareErrorElement.dataset.i18n = 'share.error.generic';
+    shareErrorElement.textContent = t('share.error.generic');
   } finally {
     shareOperationInFlight = false;
 
@@ -357,7 +378,7 @@ function openShareDialog() {
   }
 
   if (typeof shareDialog.showModal !== 'function') {
-    alert('Sharing is not supported in this browser.');
+    alert(t('share.alertUnsupported'));
     return;
   }
 
@@ -402,34 +423,52 @@ async function handleCopyShareLink() {
   }
 
   if (copied) {
-    copyShareLinkButton.textContent = 'Copied!';
+    copyShareLinkButton.dataset.state = 'copied';
+    updateCopyShareLinkLabel();
 
     window.setTimeout(() => {
       if (copyShareLinkButton) {
-        copyShareLinkButton.textContent = COPY_BUTTON_DEFAULT_TEXT;
+        copyShareLinkButton.dataset.state = 'default';
+        updateCopyShareLinkLabel();
       }
     }, 2000);
   } else if (shareErrorElement) {
-    shareErrorElement.textContent = 'Copy to clipboard is not supported in this browser.';
+    shareErrorElement.dataset.i18n = 'share.error.clipboardUnsupported';
+    shareErrorElement.textContent = t('share.error.clipboardUnsupported');
   }
+}
+
+function updateCopyShareLinkLabel() {
+  if (!copyShareLinkButton) {
+    return;
+  }
+
+  const state = copyShareLinkButton.dataset.state === 'copied' ? 'copied' : 'default';
+  const key = state === 'copied' ? 'share.copied' : 'share.copyLink';
+  copyShareLinkButton.textContent = t(key);
 }
 
 updateShareModeAvailability();
 setDefaultShareMode();
 clearShareFeedback();
 
+handleLocaleUpdate();
+onLocaleChange(() => {
+  handleLocaleUpdate();
+});
+
 async function createNewDiagram() {
   try {
     await modeler.importXML(DEFAULT_DIAGRAM);
     const canvas = modeler.get('canvas');
     canvas.zoom('fit-viewport');
-    setDiagramSource(null, 'Unsaved diagram');
+    setDiagramSource(null);
     if (savePathInput) {
       savePathInput.value = '';
     }
   } catch (error) {
     console.error('Failed to import default diagram', error);
-    alert('Failed to create a new diagram. Check the console for details.');
+    alert(t('notifications.newDiagramFailed'));
   }
 }
 
@@ -454,15 +493,19 @@ async function refreshStorageTree() {
     renderTree(tree.children ?? []);
   } catch (error) {
     console.error(error);
-    storageTree.innerHTML = '<li>Failed to load storage.</li>';
+    renderStorageMessage('storage.failed');
   }
 }
 
 function renderTree(nodes) {
+  if (!storageTree) {
+    return;
+  }
+
   storageTree.innerHTML = '';
 
   if (!nodes.length) {
-    storageTree.innerHTML = '<li class="storage-hint">Storage is empty.</li>';
+    renderStorageMessage('storage.empty', 'storage-hint');
     return;
   }
 
@@ -473,6 +516,55 @@ function renderTree(nodes) {
   });
 
   storageTree.appendChild(fragment);
+}
+
+function renderStorageMessage(key, className) {
+  if (!storageTree) {
+    return;
+  }
+
+  storageTree.innerHTML = '';
+  const messageItem = document.createElement('li');
+
+  if (className) {
+    messageItem.className = className;
+  }
+
+  messageItem.dataset.i18n = key;
+  messageItem.textContent = t(key);
+  storageTree.appendChild(messageItem);
+}
+
+function populateLanguageSelect() {
+  if (!languageSelect) {
+    return;
+  }
+
+  const locales = getAvailableLocales();
+  const current = getCurrentLocale();
+
+  languageSelect.innerHTML = '';
+
+  locales.forEach((locale) => {
+    const option = document.createElement('option');
+    option.value = locale;
+    option.dataset.i18n = `language.options.${locale}`;
+    option.textContent = t(`language.options.${locale}`);
+    languageSelect.appendChild(option);
+  });
+
+  if (locales.includes(current)) {
+    languageSelect.value = current;
+  }
+}
+
+function handleLocaleUpdate() {
+  populateLanguageSelect();
+  applyTranslations();
+  const currentTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+  updateThemeToggle(currentTheme);
+  updateDiagramTitle();
+  updateCopyShareLinkLabel();
 }
 
 function createTreeNode(node) {
@@ -550,7 +642,7 @@ async function loadDiagramFromStorage(path) {
     }
   } catch (error) {
     console.error(error);
-    alert('Unable to load the BPMN file from storage.');
+    alert(t('notifications.loadFromStorageFailed'));
   }
 }
 
@@ -574,10 +666,10 @@ async function saveDiagramToStorage(path) {
     if (savePathInput) {
       savePathInput.value = path;
     }
-    alert('Diagram saved to storage.');
+    alert(t('notifications.saveSuccess'));
   } catch (error) {
     console.error(error);
-    alert('Unable to save the BPMN file.');
+    alert(t('notifications.saveFailed'));
   }
 }
 
@@ -596,12 +688,20 @@ async function createFolder(path) {
     }
 
     await refreshStorageTree();
-    alert('Folder created.');
+    alert(t('notifications.folderCreated'));
   } catch (error) {
     console.error(error);
-    alert('Unable to create the folder.');
+    alert(t('notifications.folderCreateFailed'));
   }
 }
+
+languageSelect?.addEventListener('change', (event) => {
+  const target = event.target;
+
+  if (target instanceof HTMLSelectElement) {
+    setLocale(target.value);
+  }
+});
 
 newDiagramButton?.addEventListener('click', () => {
   createNewDiagram();
@@ -629,7 +729,7 @@ fileInput?.addEventListener('change', async (event) => {
     setDiagramSource(null, deriveNameFromPath(suggestedPath));
   } catch (error) {
     console.error(error);
-    alert('Failed to import the selected file.');
+    alert(t('notifications.importFailed'));
   } finally {
     event.target.value = '';
   }
@@ -647,7 +747,7 @@ downloadButton?.addEventListener('click', async () => {
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error(error);
-    alert('Failed to download the BPMN diagram.');
+    alert(t('notifications.downloadFailed'));
   }
 });
 
@@ -722,7 +822,7 @@ saveForm?.addEventListener('submit', async (event) => {
   const path = savePathInput.value.trim();
 
   if (!path) {
-    alert('Provide a file path to save the diagram.');
+    alert(t('prompts.provideFilePath'));
     return;
   }
 
@@ -734,7 +834,7 @@ folderForm?.addEventListener('submit', async (event) => {
   const path = folderPathInput.value.trim();
 
   if (!path) {
-    alert('Provide a folder path.');
+    alert(t('prompts.provideFolderPath'));
     return;
   }
 
