@@ -56,6 +56,7 @@ const folderForm = document.getElementById('folder-form');
 const folderPathInput = document.getElementById('folder-path');
 const fileInput = document.getElementById('file-input');
 const themeToggle = document.getElementById('theme-toggle');
+const diagramNameElement = document.getElementById('diagram-name');
 
 const THEME_STORAGE_KEY = 'bpmn-theme-preference';
 const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -120,11 +121,95 @@ initializeTheme();
 
 let currentActiveNode;
 
+function getModdleElementName(element) {
+  if (!element) {
+    return null;
+  }
+
+  if (typeof element.get === 'function') {
+    const moddleName = element.get('name');
+
+    if (moddleName) {
+      return moddleName;
+    }
+  }
+
+  if (typeof element.name === 'string' && element.name.trim()) {
+    return element.name;
+  }
+
+  return null;
+}
+
+function deriveDiagramTitle(definitions) {
+  if (!definitions) {
+    return 'Untitled diagram';
+  }
+
+  const definitionName = getModdleElementName(definitions);
+
+  if (definitionName) {
+    return definitionName;
+  }
+
+  const getCollection = (collectionName) => {
+    if (typeof definitions.get === 'function') {
+      return definitions.get(collectionName) ?? [];
+    }
+
+    return definitions[collectionName] ?? [];
+  };
+
+  const rootElements = getCollection('rootElements');
+
+  for (const element of rootElements) {
+    const name = getModdleElementName(element);
+
+    if (name) {
+      return name;
+    }
+  }
+
+  const diagrams = getCollection('diagrams');
+
+  for (const diagram of diagrams) {
+    const name = getModdleElementName(diagram);
+
+    if (name) {
+      return name;
+    }
+  }
+
+  if (rootElements.length && rootElements[0]?.id) {
+    return rootElements[0].id;
+  }
+
+  if (definitions.id) {
+    return definitions.id;
+  }
+
+  return 'Untitled diagram';
+}
+
+function updateDiagramTitle() {
+  if (!diagramNameElement) {
+    return;
+  }
+
+  const definitions = typeof modeler.getDefinitions === 'function' ? modeler.getDefinitions() : null;
+  const diagramTitle = deriveDiagramTitle(definitions);
+
+  diagramNameElement.textContent = diagramTitle;
+  diagramNameElement.title = diagramTitle;
+  document.title = `${diagramTitle} - BPMN Modeler`;
+}
+
 async function createNewDiagram() {
   try {
     await modeler.importXML(DEFAULT_DIAGRAM);
     const canvas = modeler.get('canvas');
     canvas.zoom('fit-viewport');
+    updateDiagramTitle();
   } catch (error) {
     console.error('Failed to import default diagram', error);
     alert('Failed to create a new diagram. Check the console for details.');
@@ -242,6 +327,7 @@ async function loadDiagramFromStorage(path) {
     await modeler.importXML(contents);
     modeler.get('canvas').zoom('fit-viewport');
     savePathInput.value = path;
+    updateDiagramTitle();
   } catch (error) {
     console.error(error);
     alert('Unable to load the BPMN file from storage.');
@@ -313,6 +399,7 @@ fileInput?.addEventListener('change', async (event) => {
     await modeler.importXML(text);
     modeler.get('canvas').zoom('fit-viewport');
     savePathInput.value = file.name.replace(/\.xml$/i, '.bpmn');
+    updateDiagramTitle();
   } catch (error) {
     console.error(error);
     alert('Failed to import the selected file.');
@@ -410,6 +497,14 @@ shareButton?.addEventListener('click', () => {
 
 storageToggle?.addEventListener('click', () => toggleStorageOverlay());
 closeStorage?.addEventListener('click', () => toggleStorageOverlay(false));
+
+modeler.on('import.done', () => {
+  updateDiagramTitle();
+});
+
+modeler.on('commandStack.changed', () => {
+  updateDiagramTitle();
+});
 
 themeToggle?.addEventListener('click', (event) => {
   if (event.shiftKey) {
