@@ -57,6 +57,15 @@ const folderPathInput = document.getElementById('folder-path');
 const fileInput = document.getElementById('file-input');
 const themeToggle = document.getElementById('theme-toggle');
 const diagramNameElement = document.getElementById('diagram-name');
+const shareDialog = document.getElementById('share-dialog');
+const shareForm = document.getElementById('share-form');
+const shareModeInputs = shareForm ? Array.from(shareForm.querySelectorAll('input[name="share-mode"]')) : [];
+const shareLinkGroup = document.getElementById('share-link-group');
+const shareLinkInput = document.getElementById('share-link');
+const copyShareLinkButton = document.getElementById('copy-share-link');
+const shareErrorElement = document.getElementById('share-error');
+const shareCancelButton = document.getElementById('share-cancel');
+const shareGenerateButton = document.getElementById('share-generate');
 
 const THEME_STORAGE_KEY = 'bpmn-theme-preference';
 const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -120,75 +129,43 @@ function initializeTheme() {
 initializeTheme();
 
 let currentActiveNode;
+let currentDiagramName = 'Unsaved diagram';
+let currentStoragePath = null;
+let shareOperationInFlight = false;
 
-function getModdleElementName(element) {
-  if (!element) {
-    return null;
-  }
+const COPY_BUTTON_DEFAULT_TEXT = 'Copy link';
 
-  if (typeof element.get === 'function') {
-    const moddleName = element.get('name');
-
-    if (moddleName) {
-      return moddleName;
-    }
-  }
-
-  if (typeof element.name === 'string' && element.name.trim()) {
-    return element.name;
-  }
-
-  return null;
+function normalizeStoragePath(path) {
+  return path?.replace(/\\+/g, '/') ?? '';
 }
 
-function deriveDiagramTitle(definitions) {
-  if (!definitions) {
-    return 'Untitled diagram';
+function deriveNameFromPath(path) {
+  if (!path) {
+    return 'Unsaved diagram';
   }
 
-  const definitionName = getModdleElementName(definitions);
+  const normalizedPath = normalizeStoragePath(path);
+  const segments = normalizedPath.split('/');
+  const candidate = segments.filter(Boolean).pop() ?? normalizedPath;
 
-  if (definitionName) {
-    return definitionName;
+  return candidate || 'Unsaved diagram';
+}
+
+function setDiagramSource(path, fallbackName) {
+  currentStoragePath = path ? normalizeStoragePath(path) : null;
+
+  if (currentStoragePath) {
+    currentDiagramName = deriveNameFromPath(currentStoragePath);
+  } else if (typeof fallbackName === 'string') {
+    currentDiagramName = fallbackName;
   }
 
-  const getCollection = (collectionName) => {
-    if (typeof definitions.get === 'function') {
-      return definitions.get(collectionName) ?? [];
-    }
+  updateShareModeAvailability();
+  updateDiagramTitle();
+}
 
-    return definitions[collectionName] ?? [];
-  };
-
-  const rootElements = getCollection('rootElements');
-
-  for (const element of rootElements) {
-    const name = getModdleElementName(element);
-
-    if (name) {
-      return name;
-    }
-  }
-
-  const diagrams = getCollection('diagrams');
-
-  for (const diagram of diagrams) {
-    const name = getModdleElementName(diagram);
-
-    if (name) {
-      return name;
-    }
-  }
-
-  if (rootElements.length && rootElements[0]?.id) {
-    return rootElements[0].id;
-  }
-
-  if (definitions.id) {
-    return definitions.id;
-  }
-
-  return 'Untitled diagram';
+function getDiagramDisplayName() {
+  return currentDiagramName?.trim() ? currentDiagramName.trim() : 'Unsaved diagram';
 }
 
 function updateDiagramTitle() {
@@ -196,20 +173,260 @@ function updateDiagramTitle() {
     return;
   }
 
-  const definitions = typeof modeler.getDefinitions === 'function' ? modeler.getDefinitions() : null;
-  const diagramTitle = deriveDiagramTitle(definitions);
-
+  const diagramTitle = getDiagramDisplayName();
   diagramNameElement.textContent = diagramTitle;
-  diagramNameElement.title = diagramTitle;
+  diagramNameElement.title = currentStoragePath ?? diagramTitle;
   document.title = `${diagramTitle} - BPMN Modeler`;
 }
+
+function updateShareModeAvailability() {
+  if (!shareModeInputs.length) {
+    return;
+  }
+
+  const hasSource = Boolean(currentStoragePath);
+  const snapshotRadio = shareModeInputs.find((input) => input.value === 'snapshot');
+
+  shareModeInputs.forEach((input) => {
+    if (input.value === 'source') {
+      input.disabled = !hasSource;
+
+      if (!hasSource && input.checked && snapshotRadio && !snapshotRadio.disabled) {
+        snapshotRadio.checked = true;
+      }
+    }
+
+    const optionContainer = input.closest('.share-option');
+
+    if (optionContainer) {
+      optionContainer.classList.toggle('disabled', input.disabled);
+    }
+  });
+}
+
+function setDefaultShareMode() {
+  if (!shareModeInputs.length) {
+    return;
+  }
+
+  const preferredMode = currentStoragePath ? 'source' : 'snapshot';
+  let matched = false;
+
+  for (const input of shareModeInputs) {
+    if (!input.disabled && input.value === preferredMode) {
+      input.checked = true;
+      matched = true;
+      break;
+    }
+  }
+
+  if (!matched) {
+    const fallback = shareModeInputs.find((input) => !input.disabled);
+
+    if (fallback) {
+      fallback.checked = true;
+    }
+  }
+}
+
+function clearShareFeedback() {
+  if (shareLinkGroup) {
+    shareLinkGroup.classList.add('hidden');
+  }
+
+  if (shareLinkInput) {
+    shareLinkInput.value = '';
+  }
+
+  if (copyShareLinkButton) {
+    copyShareLinkButton.disabled = true;
+    copyShareLinkButton.textContent = COPY_BUTTON_DEFAULT_TEXT;
+  }
+
+  if (shareErrorElement) {
+    shareErrorElement.textContent = '';
+  }
+}
+
+function getSelectedShareMode() {
+  const selected = shareModeInputs.find((input) => input.checked);
+  return selected?.value ?? 'snapshot';
+}
+
+function ensureBpmnExtension(path) {
+  return path.endsWith('.bpmn') ? path : `${path}.bpmn`;
+}
+
+async function generateSnapshotForShare() {
+  const { xml } = await modeler.saveXML({ format: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const sharePath = `shared/diagram-${timestamp}.bpmn`;
+
+  const response = await fetch('/api/storage/file', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ path: sharePath, contents: xml })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to store shared diagram');
+  }
+
+  return sharePath;
+}
+
+function focusShareLink() {
+  if (!shareLinkInput) {
+    return;
+  }
+
+  shareLinkInput.focus();
+  shareLinkInput.select();
+  shareLinkInput.setSelectionRange(0, shareLinkInput.value.length);
+}
+
+async function handleShareSubmit(event) {
+  event.preventDefault();
+
+  if (!shareForm || shareOperationInFlight) {
+    return;
+  }
+
+  clearShareFeedback();
+
+  if (!shareErrorElement) {
+    return;
+  }
+
+  shareOperationInFlight = true;
+  shareForm.classList.add('is-processing');
+
+  if (shareGenerateButton) {
+    shareGenerateButton.disabled = true;
+  }
+
+  try {
+    const mode = getSelectedShareMode();
+    let sharePath;
+
+    if (mode === 'source') {
+      if (!currentStoragePath) {
+        shareErrorElement.textContent = 'Save the diagram before sharing the source file.';
+        return;
+      }
+
+      sharePath = ensureBpmnExtension(currentStoragePath);
+    } else {
+      sharePath = await generateSnapshotForShare();
+    }
+
+    const shareUrl = new URL('/viewer', window.location.origin);
+    shareUrl.searchParams.set('path', sharePath);
+
+    if (shareLinkInput && shareLinkGroup) {
+      shareLinkInput.value = shareUrl.toString();
+      shareLinkGroup.classList.remove('hidden');
+
+      if (copyShareLinkButton) {
+        copyShareLinkButton.disabled = false;
+      }
+
+      focusShareLink();
+    }
+  } catch (error) {
+    console.error(error);
+    shareErrorElement.textContent = 'Unable to generate a share link. Please try again.';
+  } finally {
+    shareOperationInFlight = false;
+
+    if (shareForm) {
+      shareForm.classList.remove('is-processing');
+    }
+
+    if (shareGenerateButton) {
+      shareGenerateButton.disabled = false;
+    }
+  }
+}
+
+function openShareDialog() {
+  if (!shareDialog) {
+    return;
+  }
+
+  if (typeof shareDialog.showModal !== 'function') {
+    alert('Sharing is not supported in this browser.');
+    return;
+  }
+
+  clearShareFeedback();
+  updateShareModeAvailability();
+  setDefaultShareMode();
+  shareDialog.showModal();
+}
+
+async function handleCopyShareLink() {
+  if (!shareLinkInput || !copyShareLinkButton) {
+    return;
+  }
+
+  const link = shareLinkInput.value.trim();
+
+  if (!link) {
+    return;
+  }
+
+  let copied = false;
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(link);
+      copied = true;
+    } catch (error) {
+      console.warn('Clipboard copy failed, falling back to manual copy.', error);
+    }
+  }
+
+  if (!copied) {
+    focusShareLink();
+
+    if (typeof document.execCommand === 'function') {
+      try {
+        copied = document.execCommand('copy');
+      } catch (error) {
+        console.warn('document.execCommand copy failed.', error);
+      }
+    }
+  }
+
+  if (copied) {
+    copyShareLinkButton.textContent = 'Copied!';
+
+    window.setTimeout(() => {
+      if (copyShareLinkButton) {
+        copyShareLinkButton.textContent = COPY_BUTTON_DEFAULT_TEXT;
+      }
+    }, 2000);
+  } else if (shareErrorElement) {
+    shareErrorElement.textContent = 'Copy to clipboard is not supported in this browser.';
+  }
+}
+
+updateShareModeAvailability();
+setDefaultShareMode();
+clearShareFeedback();
 
 async function createNewDiagram() {
   try {
     await modeler.importXML(DEFAULT_DIAGRAM);
     const canvas = modeler.get('canvas');
     canvas.zoom('fit-viewport');
-    updateDiagramTitle();
+    setDiagramSource(null, 'Unsaved diagram');
+    if (savePathInput) {
+      savePathInput.value = '';
+    }
   } catch (error) {
     console.error('Failed to import default diagram', error);
     alert('Failed to create a new diagram. Check the console for details.');
@@ -326,8 +543,11 @@ async function loadDiagramFromStorage(path) {
     const { contents } = await response.json();
     await modeler.importXML(contents);
     modeler.get('canvas').zoom('fit-viewport');
-    savePathInput.value = path;
-    updateDiagramTitle();
+    const normalizedPath = normalizeStoragePath(path);
+    setDiagramSource(normalizedPath);
+    if (savePathInput) {
+      savePathInput.value = normalizedPath;
+    }
   } catch (error) {
     console.error(error);
     alert('Unable to load the BPMN file from storage.');
@@ -350,6 +570,10 @@ async function saveDiagramToStorage(path) {
     }
 
     await refreshStorageTree();
+    setDiagramSource(path);
+    if (savePathInput) {
+      savePathInput.value = path;
+    }
     alert('Diagram saved to storage.');
   } catch (error) {
     console.error(error);
@@ -398,8 +622,11 @@ fileInput?.addEventListener('change', async (event) => {
     const text = await file.text();
     await modeler.importXML(text);
     modeler.get('canvas').zoom('fit-viewport');
-    savePathInput.value = file.name.replace(/\.xml$/i, '.bpmn');
-    updateDiagramTitle();
+    const suggestedPath = file.name.replace(/\.xml$/i, '.bpmn');
+    if (savePathInput) {
+      savePathInput.value = suggestedPath;
+    }
+    setDiagramSource(null, deriveNameFromPath(suggestedPath));
   } catch (error) {
     console.error(error);
     alert('Failed to import the selected file.');
@@ -424,104 +651,46 @@ downloadButton?.addEventListener('click', async () => {
   }
 });
 
-async function shareCurrentDiagram() {
-  if (!shareButton) {
-    return;
-  }
-
-  const previousDisabledState = shareButton.disabled;
-  shareButton.disabled = true;
-
-  try {
-    const shouldCreateSnapshot = window.confirm(
-      'Create a new snapshot copy for sharing?\nSelect "Cancel" to share the original file instead.'
-    );
-
-    let sharePath;
-
-    if (shouldCreateSnapshot) {
-      const { xml } = await modeler.saveXML({ format: true });
-      const timestamp = new Date()
-        .toISOString()
-        .replace(/[:.]/g, '-');
-      sharePath = `shared/diagram-${timestamp}.bpmn`;
-
-      const response = await fetch('/api/storage/file', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ path: sharePath, contents: xml })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to store shared diagram');
-      }
-    } else {
-      const sourcePath = savePathInput.value.trim();
-
-      if (!sourcePath) {
-        alert('Provide a file path to share the source diagram.');
-        return;
-      }
-
-      const normalizedPath = sourcePath.endsWith('.bpmn')
-        ? sourcePath
-        : `${sourcePath}.bpmn`;
-
-      const confirmDirectShare = window.confirm(
-        `The share link will point to "${normalizedPath}".\nEnsure your latest changes are saved before continuing.`
-      );
-
-      if (!confirmDirectShare) {
-        return;
-      }
-
-      sharePath = normalizedPath;
-    }
-
-    const shareUrl = new URL('/viewer', window.location.origin);
-    shareUrl.searchParams.set('path', sharePath);
-
-    const urlString = shareUrl.toString();
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'BPMN Diagram', url: urlString });
-        return;
-      } catch (error) {
-        // fall back to clipboard when user cancels share or share is unsupported
-        if (error.name === 'AbortError') {
-          return;
-        }
-      }
-    }
-
-    if (navigator.clipboard?.writeText) {
-      try {
-        await navigator.clipboard.writeText(urlString);
-        alert(`Share link copied to clipboard.\n${urlString}`);
-        return;
-      } catch (error) {
-        console.warn('Clipboard write failed, falling back to manual copy.', error);
-      }
-    }
-
-    const manualCopy = window.prompt('Copy the share link for this diagram:', urlString);
-
-    if (manualCopy === null) {
-      alert(`Share link ready:\n${urlString}`);
-    }
-  } catch (error) {
-    console.error(error);
-    alert('Unable to share the current diagram.');
-  } finally {
-    shareButton.disabled = previousDisabledState;
-  }
-}
-
 shareButton?.addEventListener('click', () => {
-  void shareCurrentDiagram();
+  openShareDialog();
+});
+
+shareCancelButton?.addEventListener('click', () => {
+  shareDialog?.close();
+});
+
+shareForm?.addEventListener('submit', (event) => {
+  void handleShareSubmit(event);
+});
+
+shareForm?.addEventListener('change', (event) => {
+  const target = event.target;
+
+  if (target instanceof HTMLInputElement && target.name === 'share-mode') {
+    clearShareFeedback();
+    if (shareErrorElement) {
+      shareErrorElement.textContent = '';
+    }
+  }
+});
+
+copyShareLinkButton?.addEventListener('click', () => {
+  void handleCopyShareLink();
+});
+
+shareDialog?.addEventListener('close', () => {
+  shareOperationInFlight = false;
+
+  if (shareForm) {
+    shareForm.classList.remove('is-processing');
+  }
+
+  if (shareGenerateButton) {
+    shareGenerateButton.disabled = false;
+  }
+
+  clearShareFeedback();
+  setDefaultShareMode();
 });
 
 storageToggle?.addEventListener('click', () => toggleStorageOverlay());

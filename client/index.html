@@ -194,6 +194,43 @@
         </div>
       </div>
     </div>
+    <dialog id="share-dialog" aria-labelledby="share-dialog-title">
+      <form id="share-form" class="share-dialog" method="dialog">
+        <header class="share-dialog-header">
+          <h2 id="share-dialog-title">Share diagram</h2>
+          <p class="share-dialog-description">Choose how you'd like to share this diagram.</p>
+        </header>
+        <fieldset class="share-options">
+          <legend>Share options</legend>
+          <label class="share-option">
+            <input type="radio" name="share-mode" value="source" />
+            <span class="share-option-content">
+              <span class="share-option-title">Share saved source file</span>
+              <span class="share-option-hint">Generate a link to the file stored in workspace storage.</span>
+            </span>
+          </label>
+          <label class="share-option">
+            <input type="radio" name="share-mode" value="snapshot" checked />
+            <span class="share-option-content">
+              <span class="share-option-title">Create snapshot copy</span>
+              <span class="share-option-hint">Save a timestamped copy in <code>shared/</code> and share that link.</span>
+            </span>
+          </label>
+        </fieldset>
+        <div class="share-error" id="share-error" role="alert" aria-live="polite"></div>
+        <div class="share-link-group hidden" id="share-link-group">
+          <label for="share-link">Share link</label>
+          <div class="share-link-row">
+            <input id="share-link" type="text" readonly />
+            <button type="button" class="small-button" id="copy-share-link">Copy link</button>
+          </div>
+        </div>
+        <div class="share-actions">
+          <button type="button" class="button" id="share-cancel">Cancel</button>
+          <button type="submit" class="button primary" id="share-generate">Generate link</button>
+        </div>
+      </form>
+    </dialog>
     <input type="file" id="file-input" accept=".bpmn,.xml" hidden />
     <script type="module" src="/src/modeler/main.js"></script>
   </body>
