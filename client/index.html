@@ -24,7 +24,7 @@
     <div class="app">
       <header class="app-header">
         <div class="app-title">
-          <span id="diagram-name">Untitled diagram</span>
+          <span id="diagram-name" data-i18n="diagram.untitled">Untitled diagram</span>
         </div>
         <div class="action-bar">
           <div class="action-group">
@@ -32,8 +32,7 @@
               class="button icon-button primary"
               id="new-diagram"
               type="button"
-              aria-label="Create a new diagram"
-              title="Create a new diagram"
+              data-i18n-attrs="aria-label:actions.newDiagram.ariaLabel,title:actions.newDiagram.title"
             >
               <svg aria-hidden="true" class="icon" viewBox="0 0 24 24" fill="none">
                 <path
@@ -44,14 +43,13 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              <span class="sr-only">New diagram</span>
+              <span class="sr-only" data-i18n="actions.newDiagram.label">New diagram</span>
             </button>
             <button
               class="button icon-button"
               id="import-file"
               type="button"
-              aria-label="Import a BPMN file"
-              title="Import a BPMN file"
+              data-i18n-attrs="aria-label:actions.importFile.ariaLabel,title:actions.importFile.title"
             >
               <svg aria-hidden="true" class="icon" viewBox="0 0 24 24" fill="none">
                 <path
@@ -62,14 +60,13 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              <span class="sr-only">Import file</span>
+              <span class="sr-only" data-i18n="actions.importFile.label">Import file</span>
             </button>
             <button
               class="button icon-button"
               id="download-diagram"
               type="button"
-              aria-label="Download the current BPMN diagram"
-              title="Download the current BPMN diagram"
+              data-i18n-attrs="aria-label:actions.downloadDiagram.ariaLabel,title:actions.downloadDiagram.title"
             >
               <svg aria-hidden="true" class="icon" viewBox="0 0 24 24" fill="none">
                 <path
@@ -80,14 +77,13 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              <span class="sr-only">Download diagram</span>
+              <span class="sr-only" data-i18n="actions.downloadDiagram.label">Download diagram</span>
             </button>
             <button
               class="button icon-button"
               id="share-diagram"
               type="button"
-              aria-label="Share the current diagram as a viewer link"
-              title="Share the current diagram as a viewer link"
+              data-i18n-attrs="aria-label:actions.shareDiagram.ariaLabel,title:actions.shareDiagram.title"
             >
               <svg aria-hidden="true" class="icon" viewBox="0 0 24 24" fill="none">
                 <path
@@ -98,7 +94,7 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              <span class="sr-only">Share diagram</span>
+              <span class="sr-only" data-i18n="actions.shareDiagram.label">Share diagram</span>
             </button>
           </div>
           <div class="action-group">
@@ -106,8 +102,7 @@
               class="button icon-button file-browser-toggle"
               id="toggle-storage"
               type="button"
-              aria-label="Open workspace storage"
-              title="Open workspace storage"
+              data-i18n-attrs="aria-label:actions.openStorage.ariaLabel,title:actions.openStorage.title"
             >
               <svg aria-hidden="true" class="icon" viewBox="0 0 24 24" fill="none">
                 <path
@@ -118,16 +113,14 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              <span class="sr-only">Open storage</span>
+              <span class="sr-only" data-i18n="actions.openStorage.label">Open storage</span>
             </button>
             <button
               class="button icon-button"
               type="button"
               id="theme-toggle"
               aria-pressed="false"
-              aria-label="Activate dark mode"
-              title="Activate dark mode"
-            >
+              >
               <svg aria-hidden="true" class="icon icon-sun" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M12 5V3m0 18v-2m7-7h2M3 12h2m12.364-6.364 1.414-1.414M5.222 18.778l1.414-1.414m0-10.95-1.414-1.414m12.728 12.728-1.414-1.414M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
@@ -146,8 +139,12 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              <span class="sr-only">Toggle theme</span>
+              <span class="sr-only" data-i18n="theme.srLabel">Toggle theme</span>
             </button>
+          </div>
+          <div class="action-group language-group">
+            <label for="language-select" class="sr-only" data-i18n="language.label">Language</label>
+            <select id="language-select" class="language-select"></select>
           </div>
         </div>
       </header>
@@ -160,8 +157,8 @@
       <div id="file-browser" class="file-browser hidden" aria-hidden="true">
         <div class="file-browser-card">
           <div class="file-browser-header">
-            <h2>Workspace Storage</h2>
-            <button class="button" id="close-storage">Close</button>
+            <h2 data-i18n="storage.title">Workspace Storage</h2>
+            <button class="button" id="close-storage" data-i18n="storage.close">Close</button>
           </div>
           <div class="file-browser-body">
             <div class="tree-view" aria-live="polite">
@@ -169,24 +166,24 @@
             </div>
             <div class="file-browser-actions">
               <div class="panel-card">
-                <h3>Save Diagram</h3>
-                <p class="storage-hint">Enter a path relative to the workspace root. Create folders as needed.</p>
+                <h3 data-i18n="storage.saveHeading">Save Diagram</h3>
+                <p class="storage-hint" data-i18n="storage.saveHint">Enter a path relative to the workspace root. Create folders as needed.</p>
                 <form id="save-form">
                   <div class="input-group">
-                    <label for="save-path">File path</label>
-                    <input type="text" id="save-path" placeholder="diagrams/example.bpmn" />
+                    <label for="save-path" data-i18n="storage.savePathLabel">File path</label>
+                    <input type="text" id="save-path" data-i18n-attrs="placeholder:storage.savePlaceholder" placeholder="diagrams/example.bpmn" />
                   </div>
-                  <button type="submit" class="small-button primary">Save</button>
+                  <button type="submit" class="small-button primary" data-i18n="storage.saveButton">Save</button>
                 </form>
               </div>
               <div class="panel-card">
-                <h3>Create Folder</h3>
+                <h3 data-i18n="storage.createHeading">Create Folder</h3>
                 <form id="folder-form">
                   <div class="input-group">
-                    <label for="folder-path">Folder path</label>
-                    <input type="text" id="folder-path" placeholder="diagrams/new-folder" />
+                    <label for="folder-path" data-i18n="storage.folderPathLabel">Folder path</label>
+                    <input type="text" id="folder-path" data-i18n-attrs="placeholder:storage.folderPlaceholder" placeholder="diagrams/new-folder" />
                   </div>
-                  <button type="submit" class="small-button">Create</button>
+                  <button type="submit" class="small-button" data-i18n="storage.createButton">Create</button>
                 </form>
               </div>
             </div>
@@ -197,37 +194,37 @@
     <dialog id="share-dialog" aria-labelledby="share-dialog-title">
       <form id="share-form" class="share-dialog" method="dialog">
         <header class="share-dialog-header">
-          <h2 id="share-dialog-title">Share diagram</h2>
-          <p class="share-dialog-description">Choose how you'd like to share this diagram.</p>
+          <h2 id="share-dialog-title" data-i18n="share.dialogTitle">Share diagram</h2>
+          <p class="share-dialog-description" data-i18n="share.dialogDescription">Choose how you'd like to share this diagram.</p>
         </header>
         <fieldset class="share-options">
-          <legend>Share options</legend>
+          <legend data-i18n="share.optionsLegend">Share options</legend>
           <label class="share-option">
             <input type="radio" name="share-mode" value="source" />
             <span class="share-option-content">
-              <span class="share-option-title">Share saved source file</span>
-              <span class="share-option-hint">Generate a link to the file stored in workspace storage.</span>
+              <span class="share-option-title" data-i18n="share.sourceTitle">Share saved source file</span>
+              <span class="share-option-hint" data-i18n="share.sourceHint">Generate a link to the file stored in workspace storage.</span>
             </span>
           </label>
           <label class="share-option">
             <input type="radio" name="share-mode" value="snapshot" checked />
             <span class="share-option-content">
-              <span class="share-option-title">Create snapshot copy</span>
-              <span class="share-option-hint">Save a timestamped copy in <code>shared/</code> and share that link.</span>
+              <span class="share-option-title" data-i18n="share.snapshotTitle">Create snapshot copy</span>
+              <span class="share-option-hint" data-i18n-html="share.snapshotHint">Save a timestamped copy in <code>shared/</code> and share that link.</span>
             </span>
           </label>
         </fieldset>
         <div class="share-error" id="share-error" role="alert" aria-live="polite"></div>
         <div class="share-link-group hidden" id="share-link-group">
-          <label for="share-link">Share link</label>
+          <label for="share-link" data-i18n="share.linkLabel">Share link</label>
           <div class="share-link-row">
             <input id="share-link" type="text" readonly />
             <button type="button" class="small-button" id="copy-share-link">Copy link</button>
           </div>
         </div>
         <div class="share-actions">
-          <button type="button" class="button" id="share-cancel">Cancel</button>
-          <button type="submit" class="button primary" id="share-generate">Generate link</button>
+          <button type="button" class="button" id="share-cancel" data-i18n="share.cancel">Cancel</button>
+          <button type="submit" class="button primary" id="share-generate" data-i18n="share.generate">Generate link</button>
         </div>
       </form>
     </dialog>
