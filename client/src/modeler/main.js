@@ -214,6 +214,26 @@ function updateDiagramTitle() {
 }
 
 function getDiagramUrlIdentifier() {
+  if (currentStoragePath?.trim()) {
+    const normalizedPath = normalizeStoragePath(currentStoragePath).trim();
+
+    if (normalizedPath) {
+      const segments = normalizedPath.split('/');
+      const fileName = segments.pop();
+      const sanitizedFileName = normalizeDiagramName(fileName) || fileName?.trim();
+
+      if (sanitizedFileName) {
+        segments.push(sanitizedFileName);
+      }
+
+      const identifier = segments.filter(Boolean).join('/');
+
+      if (identifier) {
+        return identifier;
+      }
+    }
+  }
+
   if (currentDiagramName?.trim()) {
     return currentDiagramName.trim();
   }
