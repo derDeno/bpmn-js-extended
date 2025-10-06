@@ -1,7 +1,5 @@
 node_modules/
 dist/
-coverage/
-lib/**/*.d.ts
-.idea
-*.iml
+.env
+npm-debug.log*
 .DS_Store

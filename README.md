@@ -1,95 +1,54 @@
-# bpmn-js - BPMN 2.0 for the web
+# BPMN Modeler & Viewer
 
-[![Build Status](https://github.com/bpmn-io/bpmn-js/workflows/CI/badge.svg)](https://github.com/bpmn-io/bpmn-js/actions?query=workflow%3ACI)
+This project delivers a BPMN.io powered modeler and viewer packaged in a Docker image. The modeler mirrors the [bpmn.io demo](https://demo.bpmn.io/new) experience, provides a property sidebar, and integrates with a persistent storage volume that supports nested folder structures.
 
-View and edit BPMN 2.0 diagrams in the browser.
+## Features
 
-[![bpmn-js screencast](./resources/screencast.gif "bpmn-js in action")](http://demo.bpmn.io/s/start)
+- **Full BPMN modeling experience** with the BPMN.io modeler and properties panel.
+- **Tree-based storage browser** to load and save diagrams from a mounted Docker volume.
+- **Viewer-only page** that renders diagrams without additional UI, ideal for embedding.
+- **REST API** for listing, reading, and writing BPMN diagrams inside the workspace volume.
 
-## Installation
+## Getting Started
 
-Use the library [pre-packaged](https://github.com/bpmn-io/bpmn-js-examples/tree/main/pre-packaged)
-or include it [via npm](https://github.com/bpmn-io/bpmn-js-examples/tree/main/bundling)
-into your node-style web-application.
+### Local development
 
-## Usage
-
-To get started, create a [bpmn-js](https://github.com/bpmn-io/bpmn-js) instance
-and render [BPMN 2.0 diagrams](https://www.omg.org/spec/BPMN/2.0.2/) in the browser:
-
-```javascript
-const xml = '...'; // my BPMN 2.0 xml
-const viewer = new BpmnJS({
-  container: 'body'
-});
-
-try {
-  const { warnings } = await viewer.importXML(xml);
-
-  console.log('rendered');
-} catch (err) {
-  console.log('error rendering', err);
-}
-```
-
-Checkout our [examples](https://github.com/bpmn-io/bpmn-js-examples) for many
-more supported usage scenarios.
-
-### Dynamic Attach/Detach
-
-You may attach or detach the viewer dynamically to any element on the page, too:
-
-```javascript
-const viewer = new BpmnJS();
-
-// attach it to some element
-viewer.attachTo('#container');
-
-// detach the panel
-viewer.detach();
-```
-
-## Resources
-
-* [Demo](http://demo.bpmn.io)
-* [Issues](https://github.com/bpmn-io/bpmn-js/issues)
-* [Examples](https://github.com/bpmn-io/bpmn-js-examples)
-* [Forum](https://forum.bpmn.io)
-* [Changelog](./CHANGELOG.md)
-
-## Build and Run
-
-Prepare the project by installing all dependencies:
-
-```sh
+```bash
 npm install
-```
-
-Then, depending on your use-case you may run any of the following commands:
-
-```sh
-# build the library and run all tests
-npm run all
-
-# spin up a single local modeler instance
+npm run build
 npm start
-
-# run the full development setup
-npm run dev
 ```
 
-You may need to perform [additional project setup](./docs/project/SETUP.md) when
-building the latest development snapshot.
+The server listens on [http://localhost:3000](http://localhost:3000) by default and uses the `./data` directory for storage if `DATA_DIR` is not set.
 
-## Related
+### Docker image
 
-bpmn-js builds on top of a few powerful tools:
+Build the container image:
 
-* [bpmn-moddle](https://github.com/bpmn-io/bpmn-moddle): Read / write support for BPMN 2.0 XML in the browsers
-* [diagram-js](https://github.com/bpmn-io/diagram-js): Diagram rendering and editing toolkit
+```bash
+docker build -t bpmn-js-extended .
+```
 
-It is an extensible toolkit, complemented by many [additional utilities](https://github.com/bpmn-io/awesome-bpmn-io). 
+Run the container with a mounted volume for persistent BPMN diagrams:
+
+```bash
+docker run -it --rm -p 3000:3000 -v $(pwd)/data:/data bpmn-js-extended
+```
+
+- Visit `http://localhost:3000/` for the modeler.
+- Visit `http://localhost:3000/viewer?path=diagrams/example.bpmn` for the viewer (adjust the `path` parameter to the stored file).
+
+### API endpoints
+
+- `GET /api/storage/tree?path=<relative-folder>` – list files and folders recursively.
+- `GET /api/storage/file?path=<file>` – fetch a BPMN diagram.
+- `POST /api/storage/file` – save a BPMN diagram (`{ path, contents }`).
+- `POST /api/storage/directory` – create a folder (`{ path }`).
+
+## Volume layout
+
+All read and write operations are scoped to the `DATA_DIR` (defaults to `/data`). Nested folders are supported, making it easy to organise diagrams, e.g. `diagrams/order/process.bpmn`.
 
 ## License
 
-Use under the terms of the [bpmn.io license](http://bpmn.io/license).
+This project is provided under the MIT License.
