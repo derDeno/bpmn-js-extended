@@ -1,0 +1,12 @@
+{
+  "titles": {
+    "modeler": "BPMN Modeler",
+    "viewer": "BPMN Viewer"
+  },
+  "favicon": "/assets/favicon.svg",
+  "headerLogo": null,
+  "colors": {
+    "light": {},
+    "dark": {}
+  }
+}

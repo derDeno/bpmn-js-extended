@@ -30,6 +30,31 @@
   letter-spacing: -0.02em;
 }
 
+.app-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-logo-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.app-logo-image {
+  display: block;
+  max-height: 2.25rem;
+  width: auto;
+}
+
+.app-logo-link:focus-visible {
+  outline: 2px solid var(--button-primary-start);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
 .app-title span {
   font-size: 1.25rem;
 }

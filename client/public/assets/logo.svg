@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" role="img" aria-label="BPMN Modeler">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="36" height="36" rx="10" fill="url(#logoGradient)" />
+  <path d="M15 13h10a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5v-4a5 5 0 0 1 5-5z" fill="#fff" opacity="0.95" />
+  <path d="M66 13h9c4.418 0 8 3.134 8 7s-3.582 7-8 7h-9z" fill="none" stroke="#1f2937" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M66 13v14" fill="none" stroke="#1f2937" stroke-width="2.2" stroke-linecap="round" />
+  <path d="M89 13h5l7 14h-5l-1.4-3H88.4l-1.4 3h-5zm1.4 8h6.2L92 16.2z" fill="#1f2937" />
+  <path d="M108 13h4l6 8 6-8h4v14h-5v-7l-5 6-5-6v7h-5z" fill="#1f2937" />
+  <path d="M136 13h6l4 6 4-6h6l-7 10v4h-6v-4z" fill="#1f2937" />
+</svg>

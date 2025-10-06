@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BPMN Modeler</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
     <script>
       (function () {
         try {
@@ -24,6 +25,7 @@
     <div class="app">
       <header class="app-header">
         <div class="app-title">
+          <div class="app-logo" id="app-logo" hidden></div>
           <span id="diagram-name" data-i18n="diagram.untitled">Untitled diagram</span>
         </div>
         <div class="action-bar">
@@ -171,7 +173,7 @@
                 <form id="save-form">
                   <div class="input-group">
                     <label for="save-path" data-i18n="storage.savePathLabel">File path</label>
-                    <input type="text" id="save-path" data-i18n-attrs="placeholder:storage.savePlaceholder" placeholder="diagrams/example.bpmn" />
+                    <input type="text" id="save-path" data-i18n-attrs="placeholder:storage.savePlaceholder" placeholder="orders/process.bpmn" />
                   </div>
                   <button type="submit" class="small-button primary" data-i18n="storage.saveButton">Save</button>
                 </form>
@@ -181,7 +183,7 @@
                 <form id="folder-form">
                   <div class="input-group">
                     <label for="folder-path" data-i18n="storage.folderPathLabel">Folder path</label>
-                    <input type="text" id="folder-path" data-i18n-attrs="placeholder:storage.folderPlaceholder" placeholder="diagrams/new-folder" />
+                    <input type="text" id="folder-path" data-i18n-attrs="placeholder:storage.folderPlaceholder" placeholder="orders/new-folder" />
                   </div>
                   <button type="submit" class="small-button" data-i18n="storage.createButton">Create</button>
                 </form>

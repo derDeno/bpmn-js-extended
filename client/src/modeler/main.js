@@ -20,6 +20,7 @@ import {
   setLocale,
   t
 } from '../i18n/index.js';
+import { ensureUiConfig, renderHeaderLogo } from '../shared/uiConfig.js';
 
 const DEFAULT_DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
@@ -65,6 +66,7 @@ const folderForm = document.getElementById('folder-form');
 const folderPathInput = document.getElementById('folder-path');
 const fileInput = document.getElementById('file-input');
 const themeToggle = document.getElementById('theme-toggle');
+const appLogoContainer = document.getElementById('app-logo');
 const diagramNameElement = document.getElementById('diagram-name');
 const shareDialog = document.getElementById('share-dialog');
 const shareForm = document.getElementById('share-form');
@@ -136,8 +138,6 @@ function initializeTheme() {
   });
 }
 
-initializeLocale();
-initializeTheme();
 
 let currentActiveNode;
 let currentDiagramName = '';
@@ -516,9 +516,25 @@ updateShareModeAvailability();
 setDefaultShareMode();
 clearShareFeedback();
 
-handleLocaleUpdate();
 onLocaleChange(() => {
   handleLocaleUpdate();
+});
+
+async function bootstrapUi() {
+  try {
+    await ensureUiConfig();
+  } catch (error) {
+    console.warn('Unable to load UI configuration. Using defaults.', error);
+  }
+
+  initializeLocale();
+  initializeTheme();
+  renderHeaderLogo(appLogoContainer);
+  handleLocaleUpdate();
+}
+
+bootstrapUi().catch((error) => {
+  console.error('Failed to initialize the modeler UI.', error);
 });
 
 async function createNewDiagram() {
