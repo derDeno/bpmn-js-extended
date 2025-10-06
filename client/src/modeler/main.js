@@ -148,6 +148,24 @@ function normalizeStoragePath(path) {
   return path?.replace(/\\+/g, '/') ?? '';
 }
 
+function stripBpmnExtension(name) {
+  if (typeof name !== 'string') {
+    return '';
+  }
+
+  return name.replace(/\.bpmn$/i, '');
+}
+
+function normalizeDiagramName(name) {
+  const trimmed = typeof name === 'string' ? name.trim() : '';
+
+  if (!trimmed) {
+    return '';
+  }
+
+  return stripBpmnExtension(trimmed);
+}
+
 function deriveNameFromPath(path) {
   if (!path) {
     return '';
@@ -157,7 +175,7 @@ function deriveNameFromPath(path) {
   const segments = normalizedPath.split('/');
   const candidate = segments.filter(Boolean).pop() ?? normalizedPath;
 
-  return candidate || '';
+  return normalizeDiagramName(candidate || '');
 }
 
 function setDiagramSource(path, fallbackName = '') {
@@ -166,13 +184,14 @@ function setDiagramSource(path, fallbackName = '') {
   if (currentStoragePath) {
     currentDiagramName = deriveNameFromPath(currentStoragePath);
   } else if (typeof fallbackName === 'string') {
-    currentDiagramName = fallbackName;
+    currentDiagramName = normalizeDiagramName(fallbackName);
   } else {
     currentDiagramName = '';
   }
 
   updateShareModeAvailability();
   updateDiagramTitle();
+  updateModelerUrl();
 }
 
 function getDiagramDisplayName() {
@@ -192,6 +211,31 @@ function updateDiagramTitle() {
   diagramNameElement.textContent = diagramTitle;
   diagramNameElement.title = currentStoragePath ?? diagramTitle;
   document.title = `${diagramTitle} - ${t('app.modelerTitle')}`;
+}
+
+function getDiagramUrlIdentifier() {
+  if (currentDiagramName?.trim()) {
+    return currentDiagramName.trim();
+  }
+
+  return 'new';
+}
+
+function updateModelerUrl() {
+  if (!window?.history?.replaceState) {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const identifier = getDiagramUrlIdentifier();
+
+  params.set('diagram', identifier);
+
+  const query = params.toString();
+  const hash = window.location.hash;
+  const newUrl = `${window.location.pathname}${query ? `?${query}` : ''}${hash}`;
+
+  window.history.replaceState(null, '', newUrl);
 }
 
 function updateShareModeAvailability() {
