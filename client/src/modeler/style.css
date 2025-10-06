@@ -123,6 +123,10 @@
   height: 100%;
 }
 
+.bjs-powered-by {
+  display: none !important;
+}
+
 .properties-panel-parent {
   width: 340px;
   background: var(--panel-bg);
