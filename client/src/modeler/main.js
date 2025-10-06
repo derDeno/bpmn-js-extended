@@ -704,9 +704,13 @@ async function loadDiagramFromStorage(path) {
     if (savePathInput) {
       savePathInput.value = normalizedPath;
     }
+
+    return true;
   } catch (error) {
     console.error(error);
     alert(t('notifications.loadFromStorageFailed'));
+
+    return false;
   }
 }
 
@@ -906,4 +910,28 @@ folderForm?.addEventListener('submit', async (event) => {
   folderPathInput.value = '';
 });
 
-createNewDiagram();
+async function initializeDiagram() {
+  const params = new URLSearchParams(window.location.search);
+  const identifier = params.get('diagram');
+
+  if (!identifier || identifier === 'new') {
+    await createNewDiagram();
+    return;
+  }
+
+  const normalizedIdentifier = normalizeStoragePath(identifier).trim();
+
+  if (!normalizedIdentifier) {
+    await createNewDiagram();
+    return;
+  }
+
+  const candidatePath = ensureBpmnExtension(normalizedIdentifier);
+  const loaded = await loadDiagramFromStorage(candidatePath);
+
+  if (!loaded) {
+    await createNewDiagram();
+  }
+}
+
+void initializeDiagram();
