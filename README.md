@@ -108,6 +108,12 @@ Paths used by the API and UI are always relative to the `diagrams/` folder.
 
 > **Note:** If you are upgrading from a version that stored BPMN files directly in `$DATA_DIR`, move those files into `$DATA_DIR/diagrams` so they appear in the storage browser and API responses.
 
+## FAQ
+
+### Are BPMN models saved automatically?
+
+Diagrams are **not** saved automatically. The modeler keeps the current diagram in memory and only persists it when you explicitly trigger the save flow. Use the storage sidebar form and enter a file path to store the diagram, which calls the `/api/storage/file` endpoint with the current XML contents produced by `modeler.saveXML`.
+
 ## License
 
 This project is provided under the MIT License.
