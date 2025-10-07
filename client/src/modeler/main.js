@@ -1,16 +1,10 @@
 import BpmnModeler from 'bpmn-js/lib/Modeler';
-import {
-  BpmnPropertiesPanelModule,
-  BpmnPropertiesProviderModule,
-  CamundaPlatformPropertiesProviderModule
-} from 'bpmn-js-properties-panel';
 import camundaPlatformBehaviors from 'camunda-bpmn-js-behaviors/lib/camunda-platform';
 import camundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
-import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
 import {
   applyTranslations,
   getAvailableLocales,
@@ -38,13 +32,7 @@ const DEFAULT_DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
 
 const modeler = new BpmnModeler({
   container: '#canvas',
-  propertiesPanel: {
-    parent: '#properties'
-  },
   additionalModules: [
-    BpmnPropertiesPanelModule,
-    BpmnPropertiesProviderModule,
-    CamundaPlatformPropertiesProviderModule,
     camundaPlatformBehaviors
   ],
   moddleExtensions: {
