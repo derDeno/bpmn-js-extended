@@ -57,13 +57,13 @@ const messages = {
       title: 'Workspace Storage',
       close: 'Close',
       saveHeading: 'Save Diagram',
-      saveHint: 'Enter a path relative to the workspace root. Create folders as needed.',
+      saveHint: 'Enter a path relative to the diagrams folder. Create folders as needed.',
       savePathLabel: 'File path',
-      savePlaceholder: 'diagrams/example.bpmn',
+      savePlaceholder: 'orders/process.bpmn',
       saveButton: 'Save',
       createHeading: 'Create Folder',
       folderPathLabel: 'Folder path',
-      folderPlaceholder: 'diagrams/new-folder',
+      folderPlaceholder: 'orders/new-folder',
       createButton: 'Create',
       empty: 'Storage is empty.',
       failed: 'Failed to load storage.'
@@ -103,7 +103,7 @@ const messages = {
       folderCreateFailed: 'Unable to create the folder.'
     },
     viewer: {
-      missingPath: 'No diagram path provided. Append ?path=your/file.bpmn to the URL.',
+      missingPath: 'No diagram path provided. Append ?path=orders/process.bpmn to the URL (paths are relative to the diagrams folder).',
       loadError: 'Unable to load diagram. Check the path and try again.'
     }
   },
@@ -162,13 +162,13 @@ const messages = {
       title: 'Arbeitsbereichsspeicher',
       close: 'Schließen',
       saveHeading: 'Diagramm speichern',
-      saveHint: 'Geben Sie einen Pfad relativ zum Arbeitsbereich an. Erstellen Sie bei Bedarf Ordner.',
+      saveHint: 'Geben Sie einen Pfad relativ zum Ordner „diagrams“ an. Erstellen Sie bei Bedarf Ordner.',
       savePathLabel: 'Dateipfad',
-      savePlaceholder: 'diagramme/beispiel.bpmn',
+      savePlaceholder: 'ablage/prozess.bpmn',
       saveButton: 'Speichern',
       createHeading: 'Ordner erstellen',
       folderPathLabel: 'Ordnerpfad',
-      folderPlaceholder: 'diagramme/neuer-ordner',
+      folderPlaceholder: 'ablage/neuer-ordner',
       createButton: 'Erstellen',
       empty: 'Der Speicher ist leer.',
       failed: 'Speicher konnte nicht geladen werden.'
@@ -208,11 +208,34 @@ const messages = {
       folderCreateFailed: 'Ordner konnte nicht erstellt werden.'
     },
     viewer: {
-      missingPath: 'Kein Diagrammpfad angegeben. Hängen Sie ?path=pfad/zur/datei.bpmn an die URL an.',
+      missingPath: 'Kein Diagrammpfad angegeben. Hängen Sie ?path=ablage/prozess.bpmn an die URL an (Pfade sind relativ zum Ordner „diagrams“).',
       loadError: 'Diagramm konnte nicht geladen werden. Pfad überprüfen und erneut versuchen.'
     }
   }
 };
+
+export function overrideAppTitles(titles = {}) {
+  const modelerTitle = typeof titles.modeler === 'string' && titles.modeler.trim() ? titles.modeler.trim() : null;
+  const viewerTitle = typeof titles.viewer === 'string' && titles.viewer.trim() ? titles.viewer.trim() : null;
+
+  if (!modelerTitle && !viewerTitle) {
+    return;
+  }
+
+  Object.values(messages).forEach((localeMessages) => {
+    if (!localeMessages?.app) {
+      return;
+    }
+
+    if (modelerTitle) {
+      localeMessages.app.modelerTitle = modelerTitle;
+    }
+
+    if (viewerTitle) {
+      localeMessages.app.viewerTitle = viewerTitle;
+    }
+  });
+}
 
 let currentLocale = FALLBACK_LOCALE;
 const listeners = new Set();

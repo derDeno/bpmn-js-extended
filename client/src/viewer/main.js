@@ -9,10 +9,10 @@ import {
   onLocaleChange,
   t
 } from '../i18n/index.js';
+import { ensureUiConfig } from '../shared/uiConfig.js';
 
 const container = document.getElementById('viewer');
 const emptyState = document.getElementById('viewer-empty');
-initializeLocale();
 const viewer = new BpmnViewer({
   container
 });
@@ -91,8 +91,22 @@ function handleLocaleChange() {
   updateViewerTitle(currentDiagramPath);
 }
 
-handleLocaleChange();
 onLocaleChange(() => {
   handleLocaleChange();
 });
-init();
+
+async function bootstrapViewer() {
+  try {
+    await ensureUiConfig();
+  } catch (error) {
+    console.warn('Unable to load UI configuration. Using defaults.', error);
+  }
+
+  initializeLocale();
+  handleLocaleChange();
+  init();
+}
+
+bootstrapViewer().catch((error) => {
+  console.error('Failed to initialize the viewer UI.', error);
+});

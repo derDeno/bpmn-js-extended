@@ -10,10 +10,16 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 const dataRoot = path.resolve(process.env.DATA_DIR || '/data');
+const configRoot = path.join(dataRoot, 'config');
+const diagramsRoot = path.join(dataRoot, 'diagrams');
 
 async function ensureDataDir() {
   try {
-    await fs.mkdir(dataRoot, { recursive: true });
+    await Promise.all([
+      fs.mkdir(dataRoot, { recursive: true }),
+      fs.mkdir(configRoot, { recursive: true }),
+      fs.mkdir(diagramsRoot, { recursive: true })
+    ]);
   } catch (error) {
     console.error('Failed to create data directory', error);
     process.exit(1);
@@ -23,9 +29,9 @@ async function ensureDataDir() {
 function resolveStoragePath(requestedPath = '') {
   const normalized = requestedPath.replace(/\\/g, '/');
   const safePath = normalized.split('/').filter(Boolean).join('/');
-  const absolute = path.resolve(dataRoot, safePath);
+  const absolute = path.resolve(diagramsRoot, safePath);
 
-  const relative = path.relative(dataRoot, absolute);
+  const relative = path.relative(diagramsRoot, absolute);
 
   if (relative.startsWith('..') || path.isAbsolute(relative)) {
     throw new Error('Invalid path');
@@ -76,6 +82,28 @@ async function buildTree(relativePath = '') {
 
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
+
+app.get('/ui-config.json', async (req, res, next) => {
+  const configPath = path.join(configRoot, 'ui-config.json');
+
+  try {
+    const stats = await fs.stat(configPath);
+
+    if (stats.isFile()) {
+      const contents = await fs.readFile(configPath, 'utf-8');
+      res.type('application/json').send(contents);
+      return;
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      console.warn('Failed to read custom UI config, falling back to defaults.', error);
+    }
+  }
+
+  next();
+});
+
+app.use('/config', express.static(configRoot));
 
 app.get('/api/storage/tree', async (req, res) => {
   const { path: relativePath = '' } = req.query;
@@ -182,5 +210,6 @@ await ensureDataDir();
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
-  console.log(`Using storage directory: ${dataRoot}`);
+  console.log(`Using storage directory: ${diagramsRoot}`);
+  console.log(`Using config directory: ${configRoot}`);
 });
