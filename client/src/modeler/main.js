@@ -43,6 +43,7 @@ const modeler = new BpmnModeler({
 const newDiagramButton = document.getElementById('new-diagram');
 const importButton = document.getElementById('import-file');
 const downloadButton = document.getElementById('download-diagram');
+const saveButton = document.getElementById('save-diagram');
 const shareButton = document.getElementById('share-diagram');
 const storageToggle = document.getElementById('toggle-storage');
 const fileBrowser = document.getElementById('file-browser');
@@ -180,6 +181,7 @@ function setDiagramSource(path, fallbackName = '') {
   updateShareModeAvailability();
   updateDiagramTitle();
   updateModelerUrl();
+  updateSaveButtonState();
 }
 
 function getDiagramDisplayName() {
@@ -603,6 +605,31 @@ function renderStorageMessage(key, className) {
   storageTree.appendChild(messageItem);
 }
 
+function focusSavePathInput() {
+  if (!savePathInput) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    savePathInput.focus();
+    savePathInput.select();
+  });
+}
+
+function updateSaveButtonState() {
+  if (!saveButton) {
+    return;
+  }
+
+  const hasStoragePath = Boolean(currentStoragePath);
+  const ariaLabelKey = hasStoragePath ? 'actions.saveDiagram.ariaLabel' : 'actions.saveDiagram.ariaLabelUnsaved';
+  const titleKey = hasStoragePath ? 'actions.saveDiagram.title' : 'actions.saveDiagram.titleUnsaved';
+
+  saveButton.dataset.mode = hasStoragePath ? 'save' : 'save-as';
+  saveButton.setAttribute('aria-label', t(ariaLabelKey));
+  saveButton.setAttribute('title', t(titleKey));
+}
+
 function populateLanguageSelect() {
   if (!languageSelect) {
     return;
@@ -633,6 +660,7 @@ function handleLocaleUpdate() {
   updateThemeToggle(currentTheme);
   updateDiagramTitle();
   updateCopyShareLinkLabel();
+  updateSaveButtonState();
 }
 
 function createTreeNode(node) {
@@ -821,6 +849,16 @@ downloadButton?.addEventListener('click', async () => {
     console.error(error);
     alert(t('notifications.downloadFailed'));
   }
+});
+
+saveButton?.addEventListener('click', async () => {
+  if (currentStoragePath) {
+    await saveDiagramToStorage(ensureBpmnExtension(currentStoragePath));
+    return;
+  }
+
+  toggleStorageOverlay(true);
+  focusSavePathInput();
 });
 
 shareButton?.addEventListener('click', () => {

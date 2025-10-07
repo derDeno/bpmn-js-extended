@@ -34,6 +34,13 @@ const messages = {
         ariaLabel: 'Download the current BPMN diagram',
         title: 'Download the current BPMN diagram'
       },
+      saveDiagram: {
+        label: 'Save diagram',
+        ariaLabel: 'Save the current diagram to storage',
+        ariaLabelUnsaved: 'Choose where to save the current diagram',
+        title: 'Save the current diagram to storage',
+        titleUnsaved: 'Choose where to save the current diagram'
+      },
       shareDiagram: {
         label: 'Share diagram',
         ariaLabel: 'Share the current diagram as a viewer link',
@@ -138,6 +145,13 @@ const messages = {
         label: 'Diagramm herunterladen',
         ariaLabel: 'Das aktuelle BPMN-Diagramm herunterladen',
         title: 'Das aktuelle BPMN-Diagramm herunterladen'
+      },
+      saveDiagram: {
+        label: 'Diagramm speichern',
+        ariaLabel: 'Das aktuelle Diagramm im Speicher sichern',
+        ariaLabelUnsaved: 'Speicherort zum Speichern des Diagramms auswählen',
+        title: 'Das aktuelle Diagramm im Speicher sichern',
+        titleUnsaved: 'Speicherort zum Speichern des Diagramms auswählen'
       },
       shareDiagram: {
         label: 'Diagramm teilen',
