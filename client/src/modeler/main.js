@@ -1,6 +1,7 @@
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import camundaPlatformBehaviors from 'camunda-bpmn-js-behaviors/lib/camunda-platform';
 import camundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json';
+import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
@@ -44,6 +45,7 @@ const newDiagramButton = document.getElementById('new-diagram');
 const importButton = document.getElementById('import-file');
 const downloadButton = document.getElementById('download-diagram');
 const editXmlButton = document.getElementById('edit-xml');
+const autoLayoutButton = document.getElementById('auto-layout');
 const saveButton = document.getElementById('save-diagram');
 const shareButton = document.getElementById('share-diagram');
 const storageToggle = document.getElementById('toggle-storage');
@@ -207,6 +209,179 @@ function handleMoreActionsKeydown(event) {
   if (moreActionsToggle) {
     moreActionsToggle.focus();
   }
+}
+
+function autoLayoutDiagram() {
+  const elementRegistry = modeler.get('elementRegistry');
+  const modeling = modeler.get('modeling');
+  const canvas = modeler.get('canvas');
+
+  if (!elementRegistry || !modeling || !canvas) {
+    return;
+  }
+
+  const rootElement = canvas.getRootElement();
+
+  if (!rootElement) {
+    return;
+  }
+
+  const flowNodes = elementRegistry.filter((element) => {
+    if (!element || element === rootElement) {
+      return false;
+    }
+
+    if (element.waypoints || element.labelTarget || element.host) {
+      return false;
+    }
+
+    if (element.parent !== rootElement) {
+      return false;
+    }
+
+    const businessObject = element.businessObject;
+
+    return Boolean(businessObject) && is(businessObject, 'bpmn:FlowNode');
+  });
+
+  if (!flowNodes.length) {
+    return;
+  }
+
+  const shapesById = new Map(flowNodes.map((shape) => [shape.id, shape]));
+  const adjacency = new Map();
+  const incomingCounts = new Map();
+  const pendingLevels = new Map();
+
+  flowNodes.forEach((shape) => {
+    const outgoing = (shape.outgoing || []).filter((connection) => {
+      return Boolean(connection.businessObject)
+        && is(connection.businessObject, 'bpmn:SequenceFlow')
+        && connection.target
+        && shapesById.has(connection.target.id);
+    }).map((connection) => connection.target);
+
+    const incoming = (shape.incoming || []).filter((connection) => {
+      return Boolean(connection.businessObject)
+        && is(connection.businessObject, 'bpmn:SequenceFlow')
+        && connection.source
+        && shapesById.has(connection.source.id);
+    });
+
+    adjacency.set(shape.id, outgoing);
+    incomingCounts.set(shape.id, incoming.length);
+  });
+
+  const queue = [];
+  const levelAssignments = new Map();
+
+  flowNodes.forEach((shape) => {
+    if ((incomingCounts.get(shape.id) || 0) === 0) {
+      levelAssignments.set(shape.id, 0);
+      queue.push(shape);
+    }
+  });
+
+  while (queue.length) {
+    const shape = queue.shift();
+    const currentLevel = levelAssignments.get(shape.id) ?? 0;
+    const targets = adjacency.get(shape.id) || [];
+
+    targets.forEach((target) => {
+      const candidateLevel = currentLevel + 1;
+      const storedLevel = pendingLevels.get(target.id) ?? 0;
+
+      if (candidateLevel > storedLevel) {
+        pendingLevels.set(target.id, candidateLevel);
+      }
+
+      const remaining = (incomingCounts.get(target.id) || 0) - 1;
+      incomingCounts.set(target.id, remaining);
+
+      if (remaining === 0) {
+        levelAssignments.set(target.id, pendingLevels.get(target.id) ?? candidateLevel);
+        queue.push(shapesById.get(target.id));
+      }
+    });
+  }
+
+  flowNodes.forEach((shape) => {
+    if (!levelAssignments.has(shape.id)) {
+      levelAssignments.set(shape.id, pendingLevels.get(shape.id) ?? 0);
+    }
+  });
+
+  const bucketMap = new Map();
+
+  levelAssignments.forEach((level, id) => {
+    const shape = shapesById.get(id);
+
+    if (!shape) {
+      return;
+    }
+
+    const bucket = bucketMap.get(level) ?? [];
+    bucket.push(shape);
+    bucketMap.set(level, bucket);
+  });
+
+  bucketMap.forEach((bucket) => {
+    bucket.sort((a, b) => {
+      if (a.y !== b.y) {
+        return a.y - b.y;
+      }
+
+      return a.id.localeCompare(b.id);
+    });
+  });
+
+  const centersX = flowNodes.map((shape) => shape.x + shape.width / 2);
+  const centersY = flowNodes.map((shape) => shape.y + shape.height / 2);
+
+  const minCenterX = Math.min(...centersX);
+  const minCenterY = Math.min(...centersY);
+
+  const baseCenterX = Number.isFinite(minCenterX) ? minCenterX : 150;
+  const baseCenterY = Number.isFinite(minCenterY) ? minCenterY : 150;
+
+  const columnSpacing = 280;
+  const rowSpacing = 170;
+
+  const orderedLevels = Array.from(bucketMap.entries()).sort(([a], [b]) => a - b);
+  const connectionsToLayout = new Set();
+
+  orderedLevels.forEach(([level, bucket]) => {
+    bucket.forEach((shape, index) => {
+      const targetCenterX = baseCenterX + level * columnSpacing;
+      const targetCenterY = baseCenterY + index * rowSpacing;
+
+      const currentCenterX = shape.x + shape.width / 2;
+      const currentCenterY = shape.y + shape.height / 2;
+
+      const deltaX = targetCenterX - currentCenterX;
+      const deltaY = targetCenterY - currentCenterY;
+
+      if (Math.abs(deltaX) > 0.5 || Math.abs(deltaY) > 0.5) {
+        modeling.moveElements([shape], { x: deltaX, y: deltaY }, rootElement);
+      }
+
+      (shape.incoming || []).forEach((connection) => {
+        if (connection.businessObject && is(connection.businessObject, 'bpmn:SequenceFlow')) {
+          connectionsToLayout.add(connection);
+        }
+      });
+
+      (shape.outgoing || []).forEach((connection) => {
+        if (connection.businessObject && is(connection.businessObject, 'bpmn:SequenceFlow')) {
+          connectionsToLayout.add(connection);
+        }
+      });
+    });
+  });
+
+  connectionsToLayout.forEach((connection) => {
+    modeling.layoutConnection(connection);
+  });
 }
 
 
@@ -1103,6 +1278,14 @@ moreActionsMenu?.addEventListener('click', (event) => {
 
 newDiagramButton?.addEventListener('click', () => {
   createNewDiagram();
+});
+
+autoLayoutButton?.addEventListener('click', () => {
+  try {
+    autoLayoutDiagram();
+  } catch (error) {
+    console.error('Failed to auto layout diagram.', error);
+  }
 });
 
 importButton?.addEventListener('click', () => {
