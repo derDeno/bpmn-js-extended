@@ -226,6 +226,34 @@ function autoLayoutDiagram() {
     return;
   }
 
+  const laneShapesById = new Map(
+    elementRegistry
+      .filter((element) => {
+        if (!element || element === rootElement) {
+          return false;
+        }
+
+        const businessObject = element.businessObject;
+
+        return Boolean(businessObject) && is(businessObject, 'bpmn:Lane');
+      })
+      .map((lane) => [lane.id, lane])
+  );
+
+  const laneOrder = new Map(
+    Array.from(laneShapesById.values())
+      .sort((a, b) => {
+        if (a.y !== b.y) {
+          return a.y - b.y;
+        }
+
+        return a.id.localeCompare(b.id);
+      })
+      .map((lane, index) => [lane.id, index])
+  );
+
+  const laneAssignments = new Map();
+
   const flowNodes = elementRegistry.filter((element) => {
     if (!element || element === rootElement) {
       return false;
@@ -235,13 +263,39 @@ function autoLayoutDiagram() {
       return false;
     }
 
-    if (element.parent !== rootElement) {
+    const businessObject = element.businessObject;
+
+    if (!businessObject || !is(businessObject, 'bpmn:FlowNode')) {
       return false;
     }
 
-    const businessObject = element.businessObject;
+    let currentParent = element.parent;
+    let assignedLaneId = null;
 
-    return Boolean(businessObject) && is(businessObject, 'bpmn:FlowNode');
+    while (currentParent && currentParent !== rootElement) {
+      const parentBusinessObject = currentParent.businessObject;
+
+      if (parentBusinessObject && is(parentBusinessObject, 'bpmn:Lane')) {
+        if (!assignedLaneId) {
+          assignedLaneId = currentParent.id;
+        }
+
+        currentParent = currentParent.parent;
+        continue;
+      }
+
+      return false;
+    }
+
+    if (currentParent !== rootElement) {
+      return false;
+    }
+
+    if (assignedLaneId) {
+      laneAssignments.set(element.id, assignedLaneId);
+    }
+
+    return true;
   });
 
   if (!flowNodes.length) {
@@ -325,16 +379,6 @@ function autoLayoutDiagram() {
     bucketMap.set(level, bucket);
   });
 
-  bucketMap.forEach((bucket) => {
-    bucket.sort((a, b) => {
-      if (a.y !== b.y) {
-        return a.y - b.y;
-      }
-
-      return a.id.localeCompare(b.id);
-    });
-  });
-
   const centersX = flowNodes.map((shape) => shape.x + shape.width / 2);
   const centersY = flowNodes.map((shape) => shape.y + shape.height / 2);
 
@@ -342,18 +386,120 @@ function autoLayoutDiagram() {
   const minCenterY = Math.min(...centersY);
 
   const baseCenterX = Number.isFinite(minCenterX) ? minCenterX : 150;
-  const baseCenterY = Number.isFinite(minCenterY) ? minCenterY : 150;
+  const defaultBaseCenterY = Number.isFinite(minCenterY) ? minCenterY : 150;
 
   const columnSpacing = 280;
   const rowSpacing = 170;
+
+  const shapesByLane = new Map();
+
+  flowNodes.forEach((shape) => {
+    const laneId = laneAssignments.get(shape.id) ?? null;
+    const bucket = shapesByLane.get(laneId) ?? [];
+    bucket.push(shape);
+    shapesByLane.set(laneId, bucket);
+  });
+
+  const targetCenterYById = new Map();
+
+  const assignTargetsForLane = (laneId, shapes) => {
+    const sortedShapes = shapes.slice().sort((a, b) => {
+      const aCenter = a.y + a.height / 2;
+      const bCenter = b.y + b.height / 2;
+
+      if (aCenter !== bCenter) {
+        return aCenter - bCenter;
+      }
+
+      if (a.x !== b.x) {
+        return a.x - b.x;
+      }
+
+      return a.id.localeCompare(b.id);
+    });
+
+    const laneShape = laneId ? laneShapesById.get(laneId) : null;
+
+    if (laneShape) {
+      const laneTop = laneShape.y;
+      const laneHeight = laneShape.height;
+      const padding = Math.min(Math.max(laneHeight * 0.1, 30), laneHeight / 2);
+      const availableHeight = Math.max(laneHeight - padding * 2, 0);
+
+      if (sortedShapes.length === 1) {
+        targetCenterYById.set(sortedShapes[0].id, laneTop + laneHeight / 2);
+        return;
+      }
+
+      if (availableHeight <= 0) {
+        const spacing = laneHeight / (sortedShapes.length + 1);
+
+        sortedShapes.forEach((shape, index) => {
+          const targetCenterY = laneTop + spacing * (index + 1);
+          targetCenterYById.set(shape.id, targetCenterY);
+        });
+
+        return;
+      }
+
+      const spacing = availableHeight / (sortedShapes.length - 1 || 1);
+
+      sortedShapes.forEach((shape, index) => {
+        const targetCenterY = laneTop + padding + index * spacing;
+        targetCenterYById.set(shape.id, targetCenterY);
+      });
+
+      return;
+    }
+
+    const centers = sortedShapes.map((shape) => shape.y + shape.height / 2);
+    const base = centers.length ? Math.min(...centers) : defaultBaseCenterY;
+
+    sortedShapes.forEach((shape, index) => {
+      const targetCenterY = base + index * rowSpacing;
+      targetCenterYById.set(shape.id, targetCenterY);
+    });
+  };
+
+  shapesByLane.forEach((shapes, laneId) => {
+    assignTargetsForLane(laneId, shapes);
+  });
 
   const orderedLevels = Array.from(bucketMap.entries()).sort(([a], [b]) => a - b);
   const connectionsToLayout = new Set();
 
   orderedLevels.forEach(([level, bucket]) => {
+    bucket.sort((a, b) => {
+      const laneA = laneAssignments.get(a.id);
+      const laneB = laneAssignments.get(b.id);
+
+      if (laneA !== laneB) {
+        const orderA = laneA ? laneOrder.get(laneA) ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY;
+        const orderB = laneB ? laneOrder.get(laneB) ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY;
+
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+      }
+
+      const targetA = targetCenterYById.get(a.id) ?? (a.y + a.height / 2);
+      const targetB = targetCenterYById.get(b.id) ?? (b.y + b.height / 2);
+
+      if (targetA !== targetB) {
+        return targetA - targetB;
+      }
+
+      if (a.y !== b.y) {
+        return a.y - b.y;
+      }
+
+      return a.id.localeCompare(b.id);
+    });
+
     bucket.forEach((shape, index) => {
       const targetCenterX = baseCenterX + level * columnSpacing;
-      const targetCenterY = baseCenterY + index * rowSpacing;
+      const fallbackCenterY = defaultBaseCenterY + index * rowSpacing;
+      const targetCenterY = targetCenterYById.get(shape.id) ?? fallbackCenterY;
 
       const currentCenterX = shape.x + shape.width / 2;
       const currentCenterY = shape.y + shape.height / 2;
