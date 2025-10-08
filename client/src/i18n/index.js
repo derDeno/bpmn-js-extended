@@ -163,12 +163,12 @@ const messages = {
         title: 'Ein neues Diagramm erstellen (Strg/Befehl+N)'
       },
       importFile: {
-        label: 'Datei importieren',
+        label: 'Importieren',
         ariaLabel: 'Eine BPMN-Datei importieren',
         title: 'Eine BPMN-Datei importieren (Strg/Befehl+O)'
       },
       downloadDiagram: {
-        label: 'Diagramm herunterladen',
+        label: 'Herunterladen',
         ariaLabel: 'Das aktuelle BPMN-Diagramm herunterladen',
         title: 'Das aktuelle BPMN-Diagramm herunterladen'
       },
@@ -178,7 +178,7 @@ const messages = {
         title: 'XML-Quelltext-Editor öffnen'
       },
       saveDiagram: {
-        label: 'Diagramm speichern',
+        label: 'Speichern',
         ariaLabel: 'Das aktuelle Diagramm im Speicher sichern',
         ariaLabelUnsaved: 'Speicherort zum Speichern des Diagramms auswählen',
         title: 'Das aktuelle Diagramm im Speicher sichern (Strg/Befehl+S, Strg/Befehl+Umschalt+S für Speichern unter)',
