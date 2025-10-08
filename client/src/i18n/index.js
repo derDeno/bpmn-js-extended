@@ -34,6 +34,11 @@ const messages = {
         ariaLabel: 'Download the current BPMN diagram',
         title: 'Download the current BPMN diagram'
       },
+      editXml: {
+        label: 'Edit XML',
+        ariaLabel: 'Open the XML source editor',
+        title: 'Open the XML source editor'
+      },
       saveDiagram: {
         label: 'Save diagram',
         ariaLabel: 'Save the current diagram to storage',
@@ -95,6 +100,21 @@ const messages = {
       },
       alertUnsupported: 'Sharing is not supported in this browser.'
     },
+    xmlEditor: {
+      title: 'Edit XML',
+      description: 'Make changes to the BPMN XML. Invalid XML cannot be imported.',
+      label: 'Diagram XML',
+      apply: 'Apply changes',
+      cancel: 'Cancel',
+      loadError: 'Unable to load the XML source. Please try again.',
+      importError: 'The XML is invalid. Please fix the issues and try again.'
+    },
+    zoom: {
+      groupLabel: 'Zoom controls',
+      in: 'Zoom in',
+      reset: 'Reset zoom',
+      out: 'Zoom out'
+    },
     prompts: {
       provideFilePath: 'Provide a file path to save the diagram.',
       provideFolderPath: 'Provide a folder path.'
@@ -145,6 +165,11 @@ const messages = {
         label: 'Diagramm herunterladen',
         ariaLabel: 'Das aktuelle BPMN-Diagramm herunterladen',
         title: 'Das aktuelle BPMN-Diagramm herunterladen'
+      },
+      editXml: {
+        label: 'XML bearbeiten',
+        ariaLabel: 'XML-Quelltext-Editor öffnen',
+        title: 'XML-Quelltext-Editor öffnen'
       },
       saveDiagram: {
         label: 'Diagramm speichern',
@@ -206,6 +231,21 @@ const messages = {
         clipboardUnsupported: 'Zwischenablage wird in diesem Browser nicht unterstützt.'
       },
       alertUnsupported: 'Teilen wird in diesem Browser nicht unterstützt.'
+    },
+    xmlEditor: {
+      title: 'XML bearbeiten',
+      description: 'Bearbeiten Sie den BPMN-XML-Quelltext. Ungültiges XML kann nicht importiert werden.',
+      label: 'Diagramm-XML',
+      apply: 'Änderungen anwenden',
+      cancel: 'Abbrechen',
+      loadError: 'XML-Quelltext konnte nicht geladen werden. Bitte erneut versuchen.',
+      importError: 'Das XML ist ungültig. Bitte korrigieren und erneut versuchen.'
+    },
+    zoom: {
+      groupLabel: 'Zoomsteuerung',
+      in: 'Heranzoomen',
+      reset: 'Zoom zurücksetzen',
+      out: 'Herauszoomen'
     },
     prompts: {
       provideFilePath: 'Geben Sie einen Dateipfad zum Speichern des Diagramms an.',
