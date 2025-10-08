@@ -83,6 +83,37 @@
             </button>
             <button
               class="button icon-button"
+              id="edit-xml"
+              type="button"
+              data-i18n-attrs="aria-label:actions.editXml.ariaLabel,title:actions.editXml.title"
+            >
+              <svg aria-hidden="true" class="icon" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M4 5a2 2 0 0 1 2-2h6l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M14 3v4h4"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M9 13h6M9 17h6M9 9h2"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span class="sr-only" data-i18n="actions.editXml.label">Edit XML</span>
+            </button>
+            <button
+              class="button icon-button"
               id="save-diagram"
               type="button"
               data-i18n-attrs="aria-label:actions.saveDiagram.ariaLabel,title:actions.saveDiagram.title"
@@ -184,6 +215,71 @@
       <div class="app-body">
         <div class="canvas-wrapper">
           <div id="canvas"></div>
+          <div
+            class="zoom-controls"
+            role="group"
+            aria-label="Zoom controls"
+            data-i18n-attrs="aria-label:zoom.groupLabel"
+          >
+            <button
+              class="zoom-button"
+              type="button"
+              id="zoom-in"
+              data-i18n-attrs="aria-label:zoom.in,title:zoom.in"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 5v14M5 12h14"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span class="sr-only" data-i18n="zoom.in">Zoom in</span>
+            </button>
+            <button
+              class="zoom-button"
+              type="button"
+              id="zoom-reset"
+              data-i18n-attrs="aria-label:zoom.reset,title:zoom.reset"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M4 4v6h6"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M5.5 18.5A9 9 0 1 0 7 7"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span class="sr-only" data-i18n="zoom.reset">Reset zoom</span>
+            </button>
+            <button
+              class="zoom-button"
+              type="button"
+              id="zoom-out"
+              data-i18n-attrs="aria-label:zoom.out,title:zoom.out"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M5 12h14"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span class="sr-only" data-i18n="zoom.out">Zoom out</span>
+            </button>
+          </div>
         </div>
       </div>
       <div id="file-browser" class="file-browser hidden" aria-hidden="true">
@@ -223,6 +319,23 @@
         </div>
       </div>
     </div>
+    <dialog id="xml-editor-dialog" aria-labelledby="xml-editor-title">
+      <form id="xml-editor-form" class="xml-editor" method="dialog">
+        <header class="xml-editor-header">
+          <h2 id="xml-editor-title" data-i18n="xmlEditor.title">Edit XML</h2>
+          <p data-i18n="xmlEditor.description">Make changes to the BPMN XML. Invalid XML cannot be imported.</p>
+        </header>
+        <div class="xml-editor-body">
+          <label for="xml-editor-textarea" data-i18n="xmlEditor.label">Diagram XML</label>
+          <textarea id="xml-editor-textarea" class="xml-editor-textarea" spellcheck="false"></textarea>
+        </div>
+        <div class="xml-editor-error" id="xml-editor-error" role="alert" aria-live="polite"></div>
+        <div class="xml-editor-actions">
+          <button type="button" class="button" id="xml-editor-cancel" data-i18n="xmlEditor.cancel">Cancel</button>
+          <button type="submit" class="button primary" data-i18n="xmlEditor.apply">Apply changes</button>
+        </div>
+      </form>
+    </dialog>
     <dialog id="share-dialog" aria-labelledby="share-dialog-title">
       <form id="share-form" class="share-dialog" method="dialog">
         <header class="share-dialog-header">

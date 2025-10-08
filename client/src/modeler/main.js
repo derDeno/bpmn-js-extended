@@ -43,6 +43,7 @@ const modeler = new BpmnModeler({
 const newDiagramButton = document.getElementById('new-diagram');
 const importButton = document.getElementById('import-file');
 const downloadButton = document.getElementById('download-diagram');
+const editXmlButton = document.getElementById('edit-xml');
 const saveButton = document.getElementById('save-diagram');
 const shareButton = document.getElementById('share-diagram');
 const storageToggle = document.getElementById('toggle-storage');
@@ -67,6 +68,14 @@ const shareErrorElement = document.getElementById('share-error');
 const shareCancelButton = document.getElementById('share-cancel');
 const shareGenerateButton = document.getElementById('share-generate');
 const languageSelect = document.getElementById('language-select');
+const xmlDialog = document.getElementById('xml-editor-dialog');
+const xmlForm = document.getElementById('xml-editor-form');
+const xmlTextarea = document.getElementById('xml-editor-textarea');
+const xmlErrorElement = document.getElementById('xml-editor-error');
+const xmlCancelButton = document.getElementById('xml-editor-cancel');
+const zoomInButton = document.getElementById('zoom-in');
+const zoomOutButton = document.getElementById('zoom-out');
+const zoomResetButton = document.getElementById('zoom-reset');
 
 const THEME_STORAGE_KEY = 'bpmn-theme-preference';
 const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -502,6 +511,65 @@ function updateCopyShareLinkLabel() {
   copyShareLinkButton.textContent = t(key);
 }
 
+function clearXmlEditorFeedback() {
+  if (!xmlErrorElement) {
+    return;
+  }
+
+  delete xmlErrorElement.dataset.i18n;
+  xmlErrorElement.textContent = '';
+}
+
+async function openXmlEditorDialog() {
+  if (!editXmlButton || !xmlDialog || !xmlTextarea) {
+    return;
+  }
+
+  if (typeof xmlDialog.showModal !== 'function') {
+    alert(t('xmlEditor.loadError'));
+    return;
+  }
+
+  try {
+    const { xml } = await modeler.saveXML({ format: true });
+    xmlTextarea.value = xml;
+    clearXmlEditorFeedback();
+    xmlDialog.showModal();
+    window.requestAnimationFrame(() => {
+      xmlTextarea.focus();
+      xmlTextarea.setSelectionRange(0, 0);
+    });
+  } catch (error) {
+    console.error('Unable to load XML for editing.', error);
+    alert(t('xmlEditor.loadError'));
+  }
+}
+
+async function handleXmlSubmit(event) {
+  event.preventDefault();
+
+  if (!xmlTextarea) {
+    return;
+  }
+
+  clearXmlEditorFeedback();
+
+  const xml = xmlTextarea.value;
+
+  try {
+    await modeler.importXML(xml);
+    const canvas = modeler.get('canvas');
+    canvas.zoom('fit-viewport');
+    xmlDialog?.close();
+  } catch (error) {
+    console.error('Failed to import XML from editor.', error);
+    if (xmlErrorElement) {
+      xmlErrorElement.dataset.i18n = 'xmlEditor.importError';
+      xmlErrorElement.textContent = t('xmlEditor.importError');
+    }
+  }
+}
+
 updateShareModeAvailability();
 setDefaultShareMode();
 clearShareFeedback();
@@ -851,6 +919,10 @@ downloadButton?.addEventListener('click', async () => {
   }
 });
 
+editXmlButton?.addEventListener('click', () => {
+  void openXmlEditorDialog();
+});
+
 saveButton?.addEventListener('click', async () => {
   if (currentStoragePath) {
     await saveDiagramToStorage(ensureBpmnExtension(currentStoragePath));
@@ -901,6 +973,49 @@ shareDialog?.addEventListener('close', () => {
 
   clearShareFeedback();
   setDefaultShareMode();
+});
+
+xmlCancelButton?.addEventListener('click', () => {
+  xmlDialog?.close();
+});
+
+xmlDialog?.addEventListener('close', () => {
+  clearXmlEditorFeedback();
+});
+
+xmlForm?.addEventListener('submit', (event) => {
+  void handleXmlSubmit(event);
+});
+
+zoomInButton?.addEventListener('click', () => {
+  try {
+    const zoomScroll = modeler.get('zoomScroll');
+    if (typeof zoomScroll?.stepZoom === 'function') {
+      zoomScroll.stepZoom(1);
+    }
+  } catch (error) {
+    console.error('Unable to zoom in.', error);
+  }
+});
+
+zoomOutButton?.addEventListener('click', () => {
+  try {
+    const zoomScroll = modeler.get('zoomScroll');
+    if (typeof zoomScroll?.stepZoom === 'function') {
+      zoomScroll.stepZoom(-1);
+    }
+  } catch (error) {
+    console.error('Unable to zoom out.', error);
+  }
+});
+
+zoomResetButton?.addEventListener('click', () => {
+  try {
+    const canvas = modeler.get('canvas');
+    canvas.zoom('fit-viewport');
+  } catch (error) {
+    console.error('Unable to reset zoom.', error);
+  }
 });
 
 storageToggle?.addEventListener('click', () => toggleStorageOverlay());
