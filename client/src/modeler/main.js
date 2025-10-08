@@ -76,6 +76,8 @@ const xmlCancelButton = document.getElementById('xml-editor-cancel');
 const zoomInButton = document.getElementById('zoom-in');
 const zoomOutButton = document.getElementById('zoom-out');
 const zoomResetButton = document.getElementById('zoom-reset');
+const moreActionsToggle = document.getElementById('more-actions-toggle');
+const moreActionsMenu = document.getElementById('more-actions-menu');
 
 const THEME_STORAGE_KEY = 'bpmn-theme-preference';
 const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -136,11 +138,83 @@ function initializeTheme() {
   });
 }
 
+function updateMoreActionsToggleAria() {
+  if (!moreActionsToggle) {
+    return;
+  }
+
+  const labelKey = isMoreActionsOpen ? 'actions.moreActions.close' : 'actions.moreActions.open';
+  const label = t(labelKey);
+
+  if (label) {
+    moreActionsToggle.setAttribute('aria-label', label);
+    moreActionsToggle.setAttribute('title', label);
+  }
+}
+
+function setMoreActionsOpen(open) {
+  if (!moreActionsToggle || !moreActionsMenu) {
+    isMoreActionsOpen = false;
+    return;
+  }
+
+  if (isMoreActionsOpen === open) {
+    updateMoreActionsToggleAria();
+    return;
+  }
+
+  isMoreActionsOpen = open;
+  moreActionsToggle.setAttribute('aria-expanded', String(open));
+  moreActionsMenu.classList.toggle('hidden', !open);
+  moreActionsMenu.setAttribute('aria-hidden', String(!open));
+
+  if (open) {
+    document.addEventListener('pointerdown', handleMoreActionsPointerDown);
+    document.addEventListener('keydown', handleMoreActionsKeydown);
+  } else {
+    document.removeEventListener('pointerdown', handleMoreActionsPointerDown);
+    document.removeEventListener('keydown', handleMoreActionsKeydown);
+  }
+
+  updateMoreActionsToggleAria();
+}
+
+function closeMoreActionsMenu() {
+  setMoreActionsOpen(false);
+}
+
+function handleMoreActionsPointerDown(event) {
+  if (!moreActionsMenu || !moreActionsToggle) {
+    return;
+  }
+
+  const target = event.target;
+
+  if (target instanceof Node && (moreActionsMenu.contains(target) || moreActionsToggle.contains(target))) {
+    return;
+  }
+
+  closeMoreActionsMenu();
+}
+
+function handleMoreActionsKeydown(event) {
+  if (event.key !== 'Escape') {
+    return;
+  }
+
+  closeMoreActionsMenu();
+
+  if (moreActionsToggle) {
+    moreActionsToggle.focus();
+  }
+}
+
 
 let currentActiveNode;
 let currentDiagramName = '';
 let currentStoragePath = null;
 let shareOperationInFlight = false;
+let isMoreActionsOpen = false;
 
 function normalizeStoragePath(path) {
   return path?.replace(/\\+/g, '/') ?? '';
@@ -589,6 +663,7 @@ async function bootstrapUi() {
   initializeTheme();
   renderHeaderLogo(appLogoContainer);
   handleLocaleUpdate();
+  closeMoreActionsMenu();
 }
 
 bootstrapUi().catch((error) => {
@@ -729,6 +804,7 @@ function handleLocaleUpdate() {
   updateDiagramTitle();
   updateCopyShareLinkLabel();
   updateSaveButtonState();
+  updateMoreActionsToggleAria();
 }
 
 function createTreeNode(node) {
@@ -871,11 +947,28 @@ languageSelect?.addEventListener('change', (event) => {
   }
 });
 
+moreActionsToggle?.addEventListener('click', () => {
+  setMoreActionsOpen(!isMoreActionsOpen);
+});
+
+moreActionsMenu?.addEventListener('click', (event) => {
+  const target = event.target;
+
+  if (target instanceof Element) {
+    const closeTrigger = target.closest('[data-close-menu]');
+
+    if (closeTrigger) {
+      closeMoreActionsMenu();
+    }
+  }
+});
+
 newDiagramButton?.addEventListener('click', () => {
   createNewDiagram();
 });
 
 importButton?.addEventListener('click', () => {
+  closeMoreActionsMenu();
   fileInput.click();
 });
 
@@ -904,6 +997,7 @@ fileInput?.addEventListener('change', async (event) => {
 });
 
 downloadButton?.addEventListener('click', async () => {
+  closeMoreActionsMenu();
   try {
     const { xml } = await modeler.saveXML({ format: true });
     const blob = new Blob([xml], { type: 'application/xml' });
@@ -920,6 +1014,7 @@ downloadButton?.addEventListener('click', async () => {
 });
 
 editXmlButton?.addEventListener('click', () => {
+  closeMoreActionsMenu();
   void openXmlEditorDialog();
 });
 

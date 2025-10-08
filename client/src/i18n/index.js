@@ -51,6 +51,11 @@ const messages = {
         ariaLabel: 'Share the current diagram as a viewer link',
         title: 'Share the current diagram as a viewer link'
       },
+      moreActions: {
+        label: 'More actions',
+        open: 'Show additional actions',
+        close: 'Hide additional actions'
+      },
       openStorage: {
         label: 'Open storage',
         ariaLabel: 'Open workspace storage',
@@ -63,7 +68,8 @@ const messages = {
       activateLight: 'Activate light mode',
       switchToDark: 'Switch to dark mode',
       switchToLight: 'Switch to light mode',
-      followSystemHint: 'Shift + click to follow system theme'
+      followSystemHint: 'Shift + click to follow system theme',
+      menuLabel: 'Theme'
     },
     storage: {
       title: 'Workspace Storage',
@@ -183,6 +189,11 @@ const messages = {
         ariaLabel: 'Das aktuelle Diagramm als Viewer-Link teilen',
         title: 'Das aktuelle Diagramm als Viewer-Link teilen'
       },
+      moreActions: {
+        label: 'Weitere Aktionen',
+        open: 'Zusätzliche Aktionen anzeigen',
+        close: 'Zusätzliche Aktionen verbergen'
+      },
       openStorage: {
         label: 'Speicher öffnen',
         ariaLabel: 'Arbeitsbereichsspeicher öffnen',
@@ -195,7 +206,8 @@ const messages = {
       activateLight: 'Hellmodus aktivieren',
       switchToDark: 'Zum Dunkelmodus wechseln',
       switchToLight: 'Zum Hellmodus wechseln',
-      followSystemHint: 'Shift + Klick, um dem Systemthema zu folgen'
+      followSystemHint: 'Shift + Klick, um dem Systemthema zu folgen',
+      menuLabel: 'Design'
     },
     storage: {
       title: 'Arbeitsbereichsspeicher',
