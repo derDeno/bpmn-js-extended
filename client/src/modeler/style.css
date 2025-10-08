@@ -70,6 +70,51 @@
   gap: 0.5rem;
 }
 
+.more-actions-container {
+  position: relative;
+}
+
+.more-actions-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 16rem;
+  padding: 0.75rem;
+  border-radius: 16px;
+  border: 1px solid var(--panel-border);
+  background: var(--card-bg);
+  box-shadow: var(--dialog-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 20;
+}
+
+.more-actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.more-actions-divider {
+  height: 1px;
+  background: var(--panel-border);
+  border-radius: 999px;
+}
+
+.more-actions-language {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.more-actions-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--input-label);
+  transition: color 0.35s ease;
+}
+
 .language-group {
   align-items: center;
 }
@@ -84,6 +129,12 @@
   font-weight: 500;
   cursor: pointer;
   transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.15s ease;
+}
+
+.more-actions-language .language-select {
+  width: 100%;
+  border-radius: 12px;
+  padding-right: 0.75rem;
 }
 
 .language-select:hover {
