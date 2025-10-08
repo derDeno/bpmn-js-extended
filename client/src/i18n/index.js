@@ -22,12 +22,12 @@ const messages = {
       newDiagram: {
         label: 'New diagram',
         ariaLabel: 'Create a new diagram',
-        title: 'Create a new diagram'
+        title: 'Create a new diagram (Ctrl/Cmd+N)'
       },
       importFile: {
         label: 'Import file',
         ariaLabel: 'Import a BPMN file',
-        title: 'Import a BPMN file'
+        title: 'Import a BPMN file (Ctrl/Cmd+O)'
       },
       downloadDiagram: {
         label: 'Download diagram',
@@ -43,8 +43,8 @@ const messages = {
         label: 'Save diagram',
         ariaLabel: 'Save the current diagram to storage',
         ariaLabelUnsaved: 'Choose where to save the current diagram',
-        title: 'Save the current diagram to storage',
-        titleUnsaved: 'Choose where to save the current diagram'
+        title: 'Save the current diagram to storage (Ctrl/Cmd+S, Ctrl/Cmd+Shift+S for Save As)',
+        titleUnsaved: 'Choose where to save the current diagram (Ctrl/Cmd+S)'
       },
       shareDiagram: {
         label: 'Share diagram',
@@ -59,7 +59,7 @@ const messages = {
       openStorage: {
         label: 'Open storage',
         ariaLabel: 'Open workspace storage',
-        title: 'Open workspace storage'
+        title: 'Open workspace storage (Ctrl/Cmd+Shift+O)'
       }
     },
     theme: {
@@ -160,12 +160,12 @@ const messages = {
       newDiagram: {
         label: 'Neues Diagramm',
         ariaLabel: 'Ein neues Diagramm erstellen',
-        title: 'Ein neues Diagramm erstellen'
+        title: 'Ein neues Diagramm erstellen (Strg/Befehl+N)'
       },
       importFile: {
         label: 'Datei importieren',
         ariaLabel: 'Eine BPMN-Datei importieren',
-        title: 'Eine BPMN-Datei importieren'
+        title: 'Eine BPMN-Datei importieren (Strg/Befehl+O)'
       },
       downloadDiagram: {
         label: 'Diagramm herunterladen',
@@ -181,8 +181,8 @@ const messages = {
         label: 'Diagramm speichern',
         ariaLabel: 'Das aktuelle Diagramm im Speicher sichern',
         ariaLabelUnsaved: 'Speicherort zum Speichern des Diagramms auswählen',
-        title: 'Das aktuelle Diagramm im Speicher sichern',
-        titleUnsaved: 'Speicherort zum Speichern des Diagramms auswählen'
+        title: 'Das aktuelle Diagramm im Speicher sichern (Strg/Befehl+S, Strg/Befehl+Umschalt+S für Speichern unter)',
+        titleUnsaved: 'Speicherort zum Speichern des Diagramms auswählen (Strg/Befehl+S)'
       },
       shareDiagram: {
         label: 'Diagramm teilen',
@@ -197,7 +197,7 @@ const messages = {
       openStorage: {
         label: 'Speicher öffnen',
         ariaLabel: 'Arbeitsbereichsspeicher öffnen',
-        title: 'Arbeitsbereichsspeicher öffnen'
+        title: 'Arbeitsbereichsspeicher öffnen (Strg/Befehl+Umschalt+O)'
       }
     },
     theme: {
