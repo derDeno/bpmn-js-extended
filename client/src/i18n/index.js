@@ -34,11 +34,6 @@ const messages = {
         ariaLabel: 'Download the current BPMN diagram',
         title: 'Download the current BPMN diagram'
       },
-      autoLayout: {
-        label: 'Auto layout',
-        ariaLabel: 'Automatically rearrange the diagram elements',
-        title: 'Automatically rearrange the diagram elements'
-      },
       editXml: {
         label: 'Edit XML',
         ariaLabel: 'Open the XML source editor',
@@ -123,7 +118,7 @@ const messages = {
     zoom: {
       groupLabel: 'Zoom controls',
       in: 'Zoom in',
-      reset: 'Reset zoom',
+      fit: 'Fit to screen',
       out: 'Zoom out'
     },
     prompts: {
@@ -176,11 +171,6 @@ const messages = {
         label: 'Herunterladen',
         ariaLabel: 'Das aktuelle BPMN-Diagramm herunterladen',
         title: 'Das aktuelle BPMN-Diagramm herunterladen'
-      },
-      autoLayout: {
-        label: 'Automatisch anordnen',
-        ariaLabel: 'Diagrammelemente automatisch neu anordnen',
-        title: 'Diagrammelemente automatisch neu anordnen'
       },
       editXml: {
         label: 'XML bearbeiten',
@@ -266,7 +256,7 @@ const messages = {
     zoom: {
       groupLabel: 'Zoomsteuerung',
       in: 'Heranzoomen',
-      reset: 'Zoom zurücksetzen',
+      fit: 'An Bildschirm anpassen',
       out: 'Herauszoomen'
     },
     prompts: {
