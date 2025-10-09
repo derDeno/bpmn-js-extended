@@ -1,7 +1,6 @@
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import camundaPlatformBehaviors from 'camunda-bpmn-js-behaviors/lib/camunda-platform';
 import camundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json';
-import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
@@ -45,7 +44,6 @@ const newDiagramButton = document.getElementById('new-diagram');
 const importButton = document.getElementById('import-file');
 const downloadButton = document.getElementById('download-diagram');
 const editXmlButton = document.getElementById('edit-xml');
-const autoLayoutButton = document.getElementById('auto-layout');
 const saveButton = document.getElementById('save-diagram');
 const shareButton = document.getElementById('share-diagram');
 const storageToggle = document.getElementById('toggle-storage');
@@ -77,12 +75,18 @@ const xmlErrorElement = document.getElementById('xml-editor-error');
 const xmlCancelButton = document.getElementById('xml-editor-cancel');
 const zoomInButton = document.getElementById('zoom-in');
 const zoomOutButton = document.getElementById('zoom-out');
-const zoomResetButton = document.getElementById('zoom-reset');
+const zoomFitButton = document.getElementById('zoom-fit');
 const moreActionsToggle = document.getElementById('more-actions-toggle');
 const moreActionsMenu = document.getElementById('more-actions-menu');
 
 const THEME_STORAGE_KEY = 'bpmn-theme-preference';
 const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+let currentActiveNode;
+let currentDiagramName = '';
+let currentStoragePath = null;
+let shareOperationInFlight = false;
+let isMoreActionsOpen = false;
 
 function readStoredTheme() {
   try {
@@ -210,332 +214,6 @@ function handleMoreActionsKeydown(event) {
     moreActionsToggle.focus();
   }
 }
-
-function autoLayoutDiagram() {
-  const elementRegistry = modeler.get('elementRegistry');
-  const modeling = modeler.get('modeling');
-  const canvas = modeler.get('canvas');
-
-  if (!elementRegistry || !modeling || !canvas) {
-    return;
-  }
-
-  const rootElement = canvas.getRootElement();
-
-  if (!rootElement) {
-    return;
-  }
-
-  const laneShapesById = new Map(
-    elementRegistry
-      .filter((element) => {
-        if (!element || element === rootElement) {
-          return false;
-        }
-
-        const businessObject = element.businessObject;
-
-        return Boolean(businessObject) && is(businessObject, 'bpmn:Lane');
-      })
-      .map((lane) => [lane.id, lane])
-  );
-
-  const laneOrder = new Map(
-    Array.from(laneShapesById.values())
-      .sort((a, b) => {
-        if (a.y !== b.y) {
-          return a.y - b.y;
-        }
-
-        return a.id.localeCompare(b.id);
-      })
-      .map((lane, index) => [lane.id, index])
-  );
-
-  const laneAssignments = new Map();
-
-  const flowNodes = elementRegistry.filter((element) => {
-    if (!element || element === rootElement) {
-      return false;
-    }
-
-    if (element.waypoints || element.labelTarget || element.host) {
-      return false;
-    }
-
-    const businessObject = element.businessObject;
-
-    if (!businessObject || !is(businessObject, 'bpmn:FlowNode')) {
-      return false;
-    }
-
-    let currentParent = element.parent;
-    let assignedLaneId = null;
-
-    while (currentParent && currentParent !== rootElement) {
-      const parentBusinessObject = currentParent.businessObject;
-
-      if (parentBusinessObject && is(parentBusinessObject, 'bpmn:Lane')) {
-        if (!assignedLaneId) {
-          assignedLaneId = currentParent.id;
-        }
-
-        currentParent = currentParent.parent;
-        continue;
-      }
-
-      return false;
-    }
-
-    if (currentParent !== rootElement) {
-      return false;
-    }
-
-    if (assignedLaneId) {
-      laneAssignments.set(element.id, assignedLaneId);
-    }
-
-    return true;
-  });
-
-  if (!flowNodes.length) {
-    return;
-  }
-
-  const shapesById = new Map(flowNodes.map((shape) => [shape.id, shape]));
-  const adjacency = new Map();
-  const incomingCounts = new Map();
-  const pendingLevels = new Map();
-
-  flowNodes.forEach((shape) => {
-    const outgoing = (shape.outgoing || []).filter((connection) => {
-      return Boolean(connection.businessObject)
-        && is(connection.businessObject, 'bpmn:SequenceFlow')
-        && connection.target
-        && shapesById.has(connection.target.id);
-    }).map((connection) => connection.target);
-
-    const incoming = (shape.incoming || []).filter((connection) => {
-      return Boolean(connection.businessObject)
-        && is(connection.businessObject, 'bpmn:SequenceFlow')
-        && connection.source
-        && shapesById.has(connection.source.id);
-    });
-
-    adjacency.set(shape.id, outgoing);
-    incomingCounts.set(shape.id, incoming.length);
-  });
-
-  const queue = [];
-  const levelAssignments = new Map();
-
-  flowNodes.forEach((shape) => {
-    if ((incomingCounts.get(shape.id) || 0) === 0) {
-      levelAssignments.set(shape.id, 0);
-      queue.push(shape);
-    }
-  });
-
-  while (queue.length) {
-    const shape = queue.shift();
-    const currentLevel = levelAssignments.get(shape.id) ?? 0;
-    const targets = adjacency.get(shape.id) || [];
-
-    targets.forEach((target) => {
-      const candidateLevel = currentLevel + 1;
-      const storedLevel = pendingLevels.get(target.id) ?? 0;
-
-      if (candidateLevel > storedLevel) {
-        pendingLevels.set(target.id, candidateLevel);
-      }
-
-      const remaining = (incomingCounts.get(target.id) || 0) - 1;
-      incomingCounts.set(target.id, remaining);
-
-      if (remaining === 0) {
-        levelAssignments.set(target.id, pendingLevels.get(target.id) ?? candidateLevel);
-        queue.push(shapesById.get(target.id));
-      }
-    });
-  }
-
-  flowNodes.forEach((shape) => {
-    if (!levelAssignments.has(shape.id)) {
-      levelAssignments.set(shape.id, pendingLevels.get(shape.id) ?? 0);
-    }
-  });
-
-  const bucketMap = new Map();
-
-  levelAssignments.forEach((level, id) => {
-    const shape = shapesById.get(id);
-
-    if (!shape) {
-      return;
-    }
-
-    const bucket = bucketMap.get(level) ?? [];
-    bucket.push(shape);
-    bucketMap.set(level, bucket);
-  });
-
-  const centersX = flowNodes.map((shape) => shape.x + shape.width / 2);
-  const centersY = flowNodes.map((shape) => shape.y + shape.height / 2);
-
-  const minCenterX = Math.min(...centersX);
-  const minCenterY = Math.min(...centersY);
-
-  const baseCenterX = Number.isFinite(minCenterX) ? minCenterX : 150;
-  const defaultBaseCenterY = Number.isFinite(minCenterY) ? minCenterY : 150;
-
-  const columnSpacing = 280;
-  const rowSpacing = 170;
-
-  const shapesByLane = new Map();
-
-  flowNodes.forEach((shape) => {
-    const laneId = laneAssignments.get(shape.id) ?? null;
-    const bucket = shapesByLane.get(laneId) ?? [];
-    bucket.push(shape);
-    shapesByLane.set(laneId, bucket);
-  });
-
-  const targetCenterYById = new Map();
-
-  const assignTargetsForLane = (laneId, shapes) => {
-    const sortedShapes = shapes.slice().sort((a, b) => {
-      const aCenter = a.y + a.height / 2;
-      const bCenter = b.y + b.height / 2;
-
-      if (aCenter !== bCenter) {
-        return aCenter - bCenter;
-      }
-
-      if (a.x !== b.x) {
-        return a.x - b.x;
-      }
-
-      return a.id.localeCompare(b.id);
-    });
-
-    const laneShape = laneId ? laneShapesById.get(laneId) : null;
-
-    if (laneShape) {
-      const laneTop = laneShape.y;
-      const laneHeight = laneShape.height;
-      const padding = Math.min(Math.max(laneHeight * 0.1, 30), laneHeight / 2);
-      const availableHeight = Math.max(laneHeight - padding * 2, 0);
-
-      if (sortedShapes.length === 1) {
-        targetCenterYById.set(sortedShapes[0].id, laneTop + laneHeight / 2);
-        return;
-      }
-
-      if (availableHeight <= 0) {
-        const spacing = laneHeight / (sortedShapes.length + 1);
-
-        sortedShapes.forEach((shape, index) => {
-          const targetCenterY = laneTop + spacing * (index + 1);
-          targetCenterYById.set(shape.id, targetCenterY);
-        });
-
-        return;
-      }
-
-      const spacing = availableHeight / (sortedShapes.length - 1 || 1);
-
-      sortedShapes.forEach((shape, index) => {
-        const targetCenterY = laneTop + padding + index * spacing;
-        targetCenterYById.set(shape.id, targetCenterY);
-      });
-
-      return;
-    }
-
-    const centers = sortedShapes.map((shape) => shape.y + shape.height / 2);
-    const base = centers.length ? Math.min(...centers) : defaultBaseCenterY;
-
-    sortedShapes.forEach((shape, index) => {
-      const targetCenterY = base + index * rowSpacing;
-      targetCenterYById.set(shape.id, targetCenterY);
-    });
-  };
-
-  shapesByLane.forEach((shapes, laneId) => {
-    assignTargetsForLane(laneId, shapes);
-  });
-
-  const orderedLevels = Array.from(bucketMap.entries()).sort(([a], [b]) => a - b);
-  const connectionsToLayout = new Set();
-
-  orderedLevels.forEach(([level, bucket]) => {
-    bucket.sort((a, b) => {
-      const laneA = laneAssignments.get(a.id);
-      const laneB = laneAssignments.get(b.id);
-
-      if (laneA !== laneB) {
-        const orderA = laneA ? laneOrder.get(laneA) ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY;
-        const orderB = laneB ? laneOrder.get(laneB) ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY;
-
-        if (orderA !== orderB) {
-          return orderA - orderB;
-        }
-      }
-
-      const targetA = targetCenterYById.get(a.id) ?? (a.y + a.height / 2);
-      const targetB = targetCenterYById.get(b.id) ?? (b.y + b.height / 2);
-
-      if (targetA !== targetB) {
-        return targetA - targetB;
-      }
-
-      if (a.y !== b.y) {
-        return a.y - b.y;
-      }
-
-      return a.id.localeCompare(b.id);
-    });
-
-    bucket.forEach((shape, index) => {
-      const targetCenterX = baseCenterX + level * columnSpacing;
-      const fallbackCenterY = defaultBaseCenterY + index * rowSpacing;
-      const targetCenterY = targetCenterYById.get(shape.id) ?? fallbackCenterY;
-
-      const currentCenterX = shape.x + shape.width / 2;
-      const currentCenterY = shape.y + shape.height / 2;
-
-      const deltaX = targetCenterX - currentCenterX;
-      const deltaY = targetCenterY - currentCenterY;
-
-      if (Math.abs(deltaX) > 0.5 || Math.abs(deltaY) > 0.5) {
-        modeling.moveElements([shape], { x: deltaX, y: deltaY }, rootElement);
-      }
-
-      (shape.incoming || []).forEach((connection) => {
-        if (connection.businessObject && is(connection.businessObject, 'bpmn:SequenceFlow')) {
-          connectionsToLayout.add(connection);
-        }
-      });
-
-      (shape.outgoing || []).forEach((connection) => {
-        if (connection.businessObject && is(connection.businessObject, 'bpmn:SequenceFlow')) {
-          connectionsToLayout.add(connection);
-        }
-      });
-    });
-  });
-
-  connectionsToLayout.forEach((connection) => {
-    modeling.layoutConnection(connection);
-  });
-}
-
-
-let currentActiveNode;
-let currentDiagramName = '';
-let currentStoragePath = null;
-let shareOperationInFlight = false;
-let isMoreActionsOpen = false;
 
 function normalizeStoragePath(path) {
   return path?.replace(/\\+/g, '/') ?? '';
@@ -1426,14 +1104,6 @@ newDiagramButton?.addEventListener('click', () => {
   createNewDiagram();
 });
 
-autoLayoutButton?.addEventListener('click', () => {
-  try {
-    autoLayoutDiagram();
-  } catch (error) {
-    console.error('Failed to auto layout diagram.', error);
-  }
-});
-
 importButton?.addEventListener('click', () => {
   openFileImportPicker();
 });
@@ -1551,12 +1221,17 @@ zoomOutButton?.addEventListener('click', () => {
   }
 });
 
-zoomResetButton?.addEventListener('click', () => {
+zoomFitButton?.addEventListener('click', () => {
   try {
     const canvas = modeler.get('canvas');
-    canvas.zoom('fit-viewport');
+
+    if (!canvas) {
+      return;
+    }
+
+    canvas.zoom('fit-viewport', 'auto');
   } catch (error) {
-    console.error('Unable to reset zoom.', error);
+    console.error('Unable to fit diagram to viewport.', error);
   }
 });
 
