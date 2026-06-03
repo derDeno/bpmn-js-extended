@@ -43,6 +43,8 @@ const modeler = new BpmnModeler({
 const newDiagramButton = document.getElementById('new-diagram');
 const importButton = document.getElementById('import-file');
 const downloadButton = document.getElementById('download-diagram');
+const editXmlButton = document.getElementById('edit-xml');
+const saveButton = document.getElementById('save-diagram');
 const shareButton = document.getElementById('share-diagram');
 const storageToggle = document.getElementById('toggle-storage');
 const fileBrowser = document.getElementById('file-browser');
@@ -66,9 +68,25 @@ const shareErrorElement = document.getElementById('share-error');
 const shareCancelButton = document.getElementById('share-cancel');
 const shareGenerateButton = document.getElementById('share-generate');
 const languageSelect = document.getElementById('language-select');
+const xmlDialog = document.getElementById('xml-editor-dialog');
+const xmlForm = document.getElementById('xml-editor-form');
+const xmlTextarea = document.getElementById('xml-editor-textarea');
+const xmlErrorElement = document.getElementById('xml-editor-error');
+const xmlCancelButton = document.getElementById('xml-editor-cancel');
+const zoomInButton = document.getElementById('zoom-in');
+const zoomOutButton = document.getElementById('zoom-out');
+const zoomFitButton = document.getElementById('zoom-fit');
+const moreActionsToggle = document.getElementById('more-actions-toggle');
+const moreActionsMenu = document.getElementById('more-actions-menu');
 
 const THEME_STORAGE_KEY = 'bpmn-theme-preference';
 const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+let currentActiveNode;
+let currentDiagramName = '';
+let currentStoragePath = null;
+let shareOperationInFlight = false;
+let isMoreActionsOpen = false;
 
 function readStoredTheme() {
   try {
@@ -126,11 +144,77 @@ function initializeTheme() {
   });
 }
 
+function updateMoreActionsToggleAria() {
+  if (!moreActionsToggle) {
+    return;
+  }
 
-let currentActiveNode;
-let currentDiagramName = '';
-let currentStoragePath = null;
-let shareOperationInFlight = false;
+  const labelKey = isMoreActionsOpen ? 'actions.moreActions.close' : 'actions.moreActions.open';
+  const label = t(labelKey);
+
+
+  if (label) {
+    moreActionsToggle.setAttribute('aria-label', label);
+    moreActionsToggle.setAttribute('title', label);
+  }
+}
+
+function setMoreActionsOpen(open) {
+  if (!moreActionsToggle || !moreActionsMenu) {
+    isMoreActionsOpen = false;
+    return;
+  }
+
+  if (isMoreActionsOpen === open) {
+    updateMoreActionsToggleAria();
+    return;
+  }
+
+  isMoreActionsOpen = open;
+  moreActionsToggle.setAttribute('aria-expanded', String(open));
+  moreActionsMenu.classList.toggle('hidden', !open);
+  moreActionsMenu.setAttribute('aria-hidden', String(!open));
+
+  if (open) {
+    document.addEventListener('pointerdown', handleMoreActionsPointerDown);
+    document.addEventListener('keydown', handleMoreActionsKeydown);
+  } else {
+    document.removeEventListener('pointerdown', handleMoreActionsPointerDown);
+    document.removeEventListener('keydown', handleMoreActionsKeydown);
+  }
+
+  updateMoreActionsToggleAria();
+}
+
+function closeMoreActionsMenu() {
+  setMoreActionsOpen(false);
+}
+
+function handleMoreActionsPointerDown(event) {
+  if (!moreActionsMenu || !moreActionsToggle) {
+    return;
+  }
+
+  const target = event.target;
+
+  if (target instanceof Node && (moreActionsMenu.contains(target) || moreActionsToggle.contains(target))) {
+    return;
+  }
+
+  closeMoreActionsMenu();
+}
+
+function handleMoreActionsKeydown(event) {
+  if (event.key !== 'Escape') {
+    return;
+  }
+
+  closeMoreActionsMenu();
+
+  if (moreActionsToggle) {
+    moreActionsToggle.focus();
+  }
+}
 
 function normalizeStoragePath(path) {
   return path?.replace(/\\+/g, '/') ?? '';
@@ -180,6 +264,7 @@ function setDiagramSource(path, fallbackName = '') {
   updateShareModeAvailability();
   updateDiagramTitle();
   updateModelerUrl();
+  updateSaveButtonState();
 }
 
 function getDiagramDisplayName() {
@@ -500,6 +585,65 @@ function updateCopyShareLinkLabel() {
   copyShareLinkButton.textContent = t(key);
 }
 
+function clearXmlEditorFeedback() {
+  if (!xmlErrorElement) {
+    return;
+  }
+
+  delete xmlErrorElement.dataset.i18n;
+  xmlErrorElement.textContent = '';
+}
+
+async function openXmlEditorDialog() {
+  if (!editXmlButton || !xmlDialog || !xmlTextarea) {
+    return;
+  }
+
+  if (typeof xmlDialog.showModal !== 'function') {
+    alert(t('xmlEditor.loadError'));
+    return;
+  }
+
+  try {
+    const { xml } = await modeler.saveXML({ format: true });
+    xmlTextarea.value = xml;
+    clearXmlEditorFeedback();
+    xmlDialog.showModal();
+    window.requestAnimationFrame(() => {
+      xmlTextarea.focus();
+      xmlTextarea.setSelectionRange(0, 0);
+    });
+  } catch (error) {
+    console.error('Unable to load XML for editing.', error);
+    alert(t('xmlEditor.loadError'));
+  }
+}
+
+async function handleXmlSubmit(event) {
+  event.preventDefault();
+
+  if (!xmlTextarea) {
+    return;
+  }
+
+  clearXmlEditorFeedback();
+
+  const xml = xmlTextarea.value;
+
+  try {
+    await modeler.importXML(xml);
+    const canvas = modeler.get('canvas');
+    canvas.zoom('fit-viewport');
+    xmlDialog?.close();
+  } catch (error) {
+    console.error('Failed to import XML from editor.', error);
+    if (xmlErrorElement) {
+      xmlErrorElement.dataset.i18n = 'xmlEditor.importError';
+      xmlErrorElement.textContent = t('xmlEditor.importError');
+    }
+  }
+}
+
 updateShareModeAvailability();
 setDefaultShareMode();
 clearShareFeedback();
@@ -519,6 +663,7 @@ async function bootstrapUi() {
   initializeTheme();
   renderHeaderLogo(appLogoContainer);
   handleLocaleUpdate();
+  closeMoreActionsMenu();
 }
 
 bootstrapUi().catch((error) => {
@@ -537,6 +682,144 @@ async function createNewDiagram() {
   } catch (error) {
     console.error('Failed to import default diagram', error);
     alert(t('notifications.newDiagramFailed'));
+  }
+}
+
+function openStorageBrowser({ focusSaveInput = false } = {}) {
+  closeMoreActionsMenu();
+  toggleStorageOverlay(true);
+
+  if (focusSaveInput) {
+    focusSavePathInput();
+  }
+}
+
+async function handleSaveAction({ saveAs = false } = {}) {
+  if (!saveAs && currentStoragePath) {
+    await saveDiagramToStorage(ensureBpmnExtension(currentStoragePath));
+    return;
+  }
+
+  openStorageBrowser({ focusSaveInput: true });
+}
+
+function openFileImportPicker() {
+  closeMoreActionsMenu();
+
+  if (!fileInput) {
+    console.warn('File input element is not available.');
+    return;
+  }
+
+  fileInput.click();
+}
+
+async function downloadCurrentDiagram() {
+  closeMoreActionsMenu();
+
+  try {
+    const { xml } = await modeler.saveXML({ format: true });
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'diagram.bpmn';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error(error);
+    alert(t('notifications.downloadFailed'));
+  }
+}
+
+function triggerUndo() {
+  try {
+    const commandStack = modeler.get('commandStack');
+    if (typeof commandStack?.undo === 'function') {
+      commandStack.undo();
+    }
+  } catch (error) {
+    console.error('Undo operation failed.', error);
+  }
+}
+
+function triggerRedo() {
+  try {
+    const commandStack = modeler.get('commandStack');
+    if (typeof commandStack?.redo === 'function') {
+      commandStack.redo();
+    }
+  } catch (error) {
+    console.error('Redo operation failed.', error);
+  }
+}
+
+function isEditableTarget(target) {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  if (target instanceof HTMLInputElement) {
+    const editableTypes = ['text', 'search', 'email', 'url', 'tel', 'password', 'number'];
+    return editableTypes.includes(target.type) && !target.readOnly && !target.disabled;
+  }
+
+  if (target instanceof HTMLTextAreaElement) {
+    return !target.readOnly && !target.disabled;
+  }
+
+  if (target.closest('[contenteditable="true"]')) {
+    return true;
+  }
+
+  return false;
+}
+
+function handleKeyboardShortcuts(event) {
+  const hasModifier = event.ctrlKey || event.metaKey;
+
+  if (!hasModifier || event.defaultPrevented) {
+    return;
+  }
+
+  const key = event.key.toLowerCase();
+  const editableTarget = isEditableTarget(event.target);
+
+  if (editableTarget && (key === 'z' || key === 'y')) {
+    return;
+  }
+
+  switch (key) {
+    case 'z':
+      event.preventDefault();
+      if (event.shiftKey) {
+        triggerRedo();
+      } else {
+        triggerUndo();
+      }
+      break;
+    case 'y':
+      event.preventDefault();
+      triggerRedo();
+      break;
+    case 's':
+      event.preventDefault();
+      void handleSaveAction({ saveAs: event.shiftKey });
+      break;
+    case 'o':
+      event.preventDefault();
+      if (event.shiftKey) {
+        openStorageBrowser();
+      } else {
+        openFileImportPicker();
+      }
+      break;
+    case 'n':
+      event.preventDefault();
+      createNewDiagram();
+      break;
+    default:
+      return;
   }
 }
 
@@ -603,6 +886,31 @@ function renderStorageMessage(key, className) {
   storageTree.appendChild(messageItem);
 }
 
+function focusSavePathInput() {
+  if (!savePathInput) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    savePathInput.focus();
+    savePathInput.select();
+  });
+}
+
+function updateSaveButtonState() {
+  if (!saveButton) {
+    return;
+  }
+
+  const hasStoragePath = Boolean(currentStoragePath);
+  const ariaLabelKey = hasStoragePath ? 'actions.saveDiagram.ariaLabel' : 'actions.saveDiagram.ariaLabelUnsaved';
+  const titleKey = hasStoragePath ? 'actions.saveDiagram.title' : 'actions.saveDiagram.titleUnsaved';
+
+  saveButton.dataset.mode = hasStoragePath ? 'save' : 'save-as';
+  saveButton.setAttribute('aria-label', t(ariaLabelKey));
+  saveButton.setAttribute('title', t(titleKey));
+}
+
 function populateLanguageSelect() {
   if (!languageSelect) {
     return;
@@ -633,6 +941,8 @@ function handleLocaleUpdate() {
   updateThemeToggle(currentTheme);
   updateDiagramTitle();
   updateCopyShareLinkLabel();
+  updateSaveButtonState();
+  updateMoreActionsToggleAria();
 }
 
 function createTreeNode(node) {
@@ -775,12 +1085,28 @@ languageSelect?.addEventListener('change', (event) => {
   }
 });
 
+moreActionsToggle?.addEventListener('click', () => {
+  setMoreActionsOpen(!isMoreActionsOpen);
+});
+
+moreActionsMenu?.addEventListener('click', (event) => {
+  const target = event.target;
+
+  if (target instanceof Element) {
+    const closeTrigger = target.closest('[data-close-menu]');
+
+    if (closeTrigger) {
+      closeMoreActionsMenu();
+    }
+  }
+});
+
 newDiagramButton?.addEventListener('click', () => {
   createNewDiagram();
 });
 
 importButton?.addEventListener('click', () => {
-  fileInput.click();
+  openFileImportPicker();
 });
 
 fileInput?.addEventListener('change', async (event) => {
@@ -807,20 +1133,17 @@ fileInput?.addEventListener('change', async (event) => {
   }
 });
 
-downloadButton?.addEventListener('click', async () => {
-  try {
-    const { xml } = await modeler.saveXML({ format: true });
-    const blob = new Blob([xml], { type: 'application/xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'diagram.bpmn';
-    a.click();
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error(error);
-    alert(t('notifications.downloadFailed'));
-  }
+downloadButton?.addEventListener('click', () => {
+  void downloadCurrentDiagram();
+});
+
+editXmlButton?.addEventListener('click', () => {
+  closeMoreActionsMenu();
+  void openXmlEditorDialog();
+});
+
+saveButton?.addEventListener('click', () => {
+  void handleSaveAction();
 });
 
 shareButton?.addEventListener('click', () => {
@@ -865,8 +1188,58 @@ shareDialog?.addEventListener('close', () => {
   setDefaultShareMode();
 });
 
+xmlCancelButton?.addEventListener('click', () => {
+  xmlDialog?.close();
+});
+
+xmlDialog?.addEventListener('close', () => {
+  clearXmlEditorFeedback();
+});
+
+xmlForm?.addEventListener('submit', (event) => {
+  void handleXmlSubmit(event);
+});
+
+zoomInButton?.addEventListener('click', () => {
+  try {
+    const zoomScroll = modeler.get('zoomScroll');
+    if (typeof zoomScroll?.stepZoom === 'function') {
+      zoomScroll.stepZoom(1);
+    }
+  } catch (error) {
+    console.error('Unable to zoom in.', error);
+  }
+});
+
+zoomOutButton?.addEventListener('click', () => {
+  try {
+    const zoomScroll = modeler.get('zoomScroll');
+    if (typeof zoomScroll?.stepZoom === 'function') {
+      zoomScroll.stepZoom(-1);
+    }
+  } catch (error) {
+    console.error('Unable to zoom out.', error);
+  }
+});
+
+zoomFitButton?.addEventListener('click', () => {
+  try {
+    const canvas = modeler.get('canvas');
+
+    if (!canvas) {
+      return;
+    }
+
+    canvas.zoom('fit-viewport', 'auto');
+  } catch (error) {
+    console.error('Unable to fit diagram to viewport.', error);
+  }
+});
+
 storageToggle?.addEventListener('click', () => toggleStorageOverlay());
 closeStorage?.addEventListener('click', () => toggleStorageOverlay(false));
+
+document.addEventListener('keydown', handleKeyboardShortcuts);
 
 modeler.on('import.done', () => {
   updateDiagramTitle();

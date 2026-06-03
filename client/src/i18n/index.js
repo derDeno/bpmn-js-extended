@@ -22,27 +22,44 @@ const messages = {
       newDiagram: {
         label: 'New diagram',
         ariaLabel: 'Create a new diagram',
-        title: 'Create a new diagram'
+        title: 'Create a new diagram (Ctrl/Cmd+N)'
       },
       importFile: {
         label: 'Import file',
         ariaLabel: 'Import a BPMN file',
-        title: 'Import a BPMN file'
+        title: 'Import a BPMN file (Ctrl/Cmd+O)'
       },
       downloadDiagram: {
         label: 'Download diagram',
         ariaLabel: 'Download the current BPMN diagram',
         title: 'Download the current BPMN diagram'
       },
+      editXml: {
+        label: 'Edit XML',
+        ariaLabel: 'Open the XML source editor',
+        title: 'Open the XML source editor'
+      },
+      saveDiagram: {
+        label: 'Save diagram',
+        ariaLabel: 'Save the current diagram to storage',
+        ariaLabelUnsaved: 'Choose where to save the current diagram',
+        title: 'Save the current diagram to storage (Ctrl/Cmd+S, Ctrl/Cmd+Shift+S for Save As)',
+        titleUnsaved: 'Choose where to save the current diagram (Ctrl/Cmd+S)'
+      },
       shareDiagram: {
         label: 'Share diagram',
         ariaLabel: 'Share the current diagram as a viewer link',
         title: 'Share the current diagram as a viewer link'
       },
+      moreActions: {
+        label: 'More actions',
+        open: 'Show additional actions',
+        close: 'Hide additional actions'
+      },
       openStorage: {
         label: 'Open storage',
         ariaLabel: 'Open workspace storage',
-        title: 'Open workspace storage'
+        title: 'Open workspace storage (Ctrl/Cmd+Shift+O)'
       }
     },
     theme: {
@@ -51,7 +68,8 @@ const messages = {
       activateLight: 'Activate light mode',
       switchToDark: 'Switch to dark mode',
       switchToLight: 'Switch to light mode',
-      followSystemHint: 'Shift + click to follow system theme'
+      followSystemHint: 'Shift + click to follow system theme',
+      menuLabel: 'Theme'
     },
     storage: {
       title: 'Workspace Storage',
@@ -87,6 +105,21 @@ const messages = {
         clipboardUnsupported: 'Copy to clipboard is not supported in this browser.'
       },
       alertUnsupported: 'Sharing is not supported in this browser.'
+    },
+    xmlEditor: {
+      title: 'Edit XML',
+      description: 'Make changes to the BPMN XML. Invalid XML cannot be imported.',
+      label: 'Diagram XML',
+      apply: 'Apply changes',
+      cancel: 'Cancel',
+      loadError: 'Unable to load the XML source. Please try again.',
+      importError: 'The XML is invalid. Please fix the issues and try again.'
+    },
+    zoom: {
+      groupLabel: 'Zoom controls',
+      in: 'Zoom in',
+      fit: 'Fit to screen',
+      out: 'Zoom out'
     },
     prompts: {
       provideFilePath: 'Provide a file path to save the diagram.',
@@ -127,27 +160,44 @@ const messages = {
       newDiagram: {
         label: 'Neues Diagramm',
         ariaLabel: 'Ein neues Diagramm erstellen',
-        title: 'Ein neues Diagramm erstellen'
+        title: 'Ein neues Diagramm erstellen (Strg/Befehl+N)'
       },
       importFile: {
-        label: 'Datei importieren',
+        label: 'Importieren',
         ariaLabel: 'Eine BPMN-Datei importieren',
-        title: 'Eine BPMN-Datei importieren'
+        title: 'Eine BPMN-Datei importieren (Strg/Befehl+O)'
       },
       downloadDiagram: {
-        label: 'Diagramm herunterladen',
+        label: 'Herunterladen',
         ariaLabel: 'Das aktuelle BPMN-Diagramm herunterladen',
         title: 'Das aktuelle BPMN-Diagramm herunterladen'
+      },
+      editXml: {
+        label: 'XML bearbeiten',
+        ariaLabel: 'XML-Quelltext-Editor öffnen',
+        title: 'XML-Quelltext-Editor öffnen'
+      },
+      saveDiagram: {
+        label: 'Speichern',
+        ariaLabel: 'Das aktuelle Diagramm im Speicher sichern',
+        ariaLabelUnsaved: 'Speicherort zum Speichern des Diagramms auswählen',
+        title: 'Das aktuelle Diagramm im Speicher sichern (Strg/Befehl+S, Strg/Befehl+Umschalt+S für Speichern unter)',
+        titleUnsaved: 'Speicherort zum Speichern des Diagramms auswählen (Strg/Befehl+S)'
       },
       shareDiagram: {
         label: 'Diagramm teilen',
         ariaLabel: 'Das aktuelle Diagramm als Viewer-Link teilen',
         title: 'Das aktuelle Diagramm als Viewer-Link teilen'
       },
+      moreActions: {
+        label: 'Weitere Aktionen',
+        open: 'Zusätzliche Aktionen anzeigen',
+        close: 'Zusätzliche Aktionen verbergen'
+      },
       openStorage: {
         label: 'Speicher öffnen',
         ariaLabel: 'Arbeitsbereichsspeicher öffnen',
-        title: 'Arbeitsbereichsspeicher öffnen'
+        title: 'Arbeitsbereichsspeicher öffnen (Strg/Befehl+Umschalt+O)'
       }
     },
     theme: {
@@ -156,7 +206,8 @@ const messages = {
       activateLight: 'Hellmodus aktivieren',
       switchToDark: 'Zum Dunkelmodus wechseln',
       switchToLight: 'Zum Hellmodus wechseln',
-      followSystemHint: 'Shift + Klick, um dem Systemthema zu folgen'
+      followSystemHint: 'Shift + Klick, um dem Systemthema zu folgen',
+      menuLabel: 'Design'
     },
     storage: {
       title: 'Arbeitsbereichsspeicher',
@@ -192,6 +243,21 @@ const messages = {
         clipboardUnsupported: 'Zwischenablage wird in diesem Browser nicht unterstützt.'
       },
       alertUnsupported: 'Teilen wird in diesem Browser nicht unterstützt.'
+    },
+    xmlEditor: {
+      title: 'XML bearbeiten',
+      description: 'Bearbeiten Sie den BPMN-XML-Quelltext. Ungültiges XML kann nicht importiert werden.',
+      label: 'Diagramm-XML',
+      apply: 'Änderungen anwenden',
+      cancel: 'Abbrechen',
+      loadError: 'XML-Quelltext konnte nicht geladen werden. Bitte erneut versuchen.',
+      importError: 'Das XML ist ungültig. Bitte korrigieren und erneut versuchen.'
+    },
+    zoom: {
+      groupLabel: 'Zoomsteuerung',
+      in: 'Heranzoomen',
+      fit: 'An Bildschirm anpassen',
+      out: 'Herauszoomen'
     },
     prompts: {
       provideFilePath: 'Geben Sie einen Dateipfad zum Speichern des Diagramms an.',
