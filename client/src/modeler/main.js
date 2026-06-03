@@ -152,6 +152,7 @@ function updateMoreActionsToggleAria() {
   const labelKey = isMoreActionsOpen ? 'actions.moreActions.close' : 'actions.moreActions.open';
   const label = t(labelKey);
 
+
   if (label) {
     moreActionsToggle.setAttribute('aria-label', label);
     moreActionsToggle.setAttribute('title', label);
